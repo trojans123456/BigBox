@@ -28,7 +28,7 @@ void log_debug(const char *fmt,...)         EV_CHECK_FMT(1,2);
 
 #if defined(DEBUG_USED)
 #define debug(x,...)    log_debug(x,__VA_ARGS__);
-#elif
+#else
 #define debug(x,...)
 #endif
 

@@ -1,6 +1,8 @@
 #ifndef __QUEUE_H
 #define __QUEUE_H
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -536,6 +538,16 @@ static inline void list_splice_tail_init(struct list_head *list,
 #define list_safe_reset_next(pos, n, member)                \
     n = list_entry(pos->member.next, typeof(*pos), member)
 
+/*获取一个成员的相对位置
+ *将0强制转换为type指针类型(强制转换并不会改变数据本身的值)，获取member成员，获取member的地址
+ *将这个地址转换为long型，得到的是该member的偏移地址*/
+#ifndef offset_of
+#define offset_of(type,member) ((long)&(((type *)0)->member))
+#endif
+
+/*ptr是指向member的指针*/
+#define container_of(ptr,type,member) \
+	((type *)((char *)ptr - offset_of(type,member)))
 
 /***********************************************************queue ****************************************************/
 

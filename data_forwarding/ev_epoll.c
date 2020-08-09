@@ -18,7 +18,7 @@ static void *epoll_init(void)
     }
 
     *epfd = epoll_create(MAX_FD);
-    if(*pefd == -1)
+    if(*epfd == -1)
     {
         free(*epfd);
         return NULL;
@@ -39,22 +39,128 @@ static void epoll_destroy(void *ptr)
 
 static int32_t epoll_add(void *ptr,struct event *ev)
 {
+    struct epoll_event epev = {0};
+    epev.events = 0;
+    int *epfd = (int *)ptr;
+    if(!epfd)
+    {
+        return -1;
+    }
 
+    if(ev->mode & EVENT_READ)
+    {
+        epev.events |= EPOLLIN;
+    }
+    if(ev->mode & EVENT_WRITE)
+    {
+        epev.events |= EPOLLOUT;
+    }
+
+    epev.data.fd = ev->fd;
+    epev.data.ptr = ev;
+
+    if(epoll_ctl(*epfd,EPOLL_CTL_ADD,ev->fd,&epev) < 0)
+    {
+        return -1;
+    }
+    return 0;
 }
 
 static int32_t epoll_mod(void *ptr,struct event *ev)
 {
+    struct epoll_event epev = {0};
+    epev.events = 0;
+    int *epfd = (int *)ptr;
+    if(!epfd)
+    {
+        return -1;
+    }
 
+    if(!ev->fd) {
+        return -1;
+    }
+    if(ev->mode & EVENT_READ) {
+        epev.events |= EPOLLIN;
+    }
+    if(ev->mode & EVENT_WRITE) {
+        epev.events |= EPOLLOUT;
+    }
+    if(!(ev->mode & EVENT_READ)) {
+        epev.events &= (~EPOLLIN);
+    }
+    if(!(ev->mode & EVENT_WRITE)) {
+        epev.events &= (~EPOLLOUT);
+    }
+
+    epev.data.fd = ev->fd;
+    epev.data.ptr = ev;
+    if(epoll_ctl(*epfd, EPOLL_CTL_MOD, ev->fd, &epev) < 0) {
+        return -1;
+    }
+    return 0;
 }
 
 static int32_t epoll_del(void *ptr,struct event *ev)
 {
-
+    int *epfd = (int *)ptr;
+    if(epfd)
+    {
+        epoll_ctl(*epfd,EPOLL_CTL_DEL,ev->fd,0);
+        return 0;
+    }
+    return -1;
 }
 
-static int32_t epoll_run(struct eventOpe *ope,void *ptr,struct event *ev)
+static int32_t epoll_run(struct eventOpe *ope,void *ptr,int32_t timeout)
 {
+    int result = 0;
+    int pos = 0;
+    struct epoll_event  epev[MAX_FD];
+    struct event *ev;
+    int *epfd = (int *)ptr;
+    if(!epfd)
+    {
+        return -1;
+    }
 
+    result = epoll_wait(*epfd,epev,MAX_FD,timeout);
+    if(result == -1)
+    {
+        goto out;
+    }
+    if(err == 0)
+    {
+        /* timeout */
+        goto out;
+    }
+
+
+    for(pos = 0;pos < result;pos++)
+    {
+        ev = epev[i].data.ptr;
+        if(epev[i].events & EPOLLIN)
+        {
+            /* read */
+            if(epev[i].events == (EPOLLIN | EPOLLERR | EPOLLHUP))
+            {
+                ev->ev_mode |= EVENT_ERROR;
+            }
+            else
+            {
+                ev->ev_mode |= EVENT_READ;
+            }
+        }
+        if(epev[i].events & EPOLLOUT)
+        {
+            ev->ev_mode |= EVENT_WRITE;
+        }
+
+        ope->evAdd(&ope->activeQueue->ev_list,ev);
+    }
+
+    return 0;
+out:
+    return result;
 }
 
 
