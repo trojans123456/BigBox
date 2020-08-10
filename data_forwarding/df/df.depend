@@ -1,0 +1,28 @@
+# depslib dependency file v1.0
+1596925315 source:d:\github\cproject\data_forwarding\main.c
+	<stdio.h>
+
+1596925315 source:d:\github\cproject\data_forwarding\minheap.c
+	<stdlib.h>
+	"minheap.h"
+
+1596925315 d:\github\cproject\data_forwarding\minheap.h
+	<stdint.h>
+
+1596935566 source:d:\github\cproject\data_forwarding\log.c
+	<stdarg.h>
+	<stdio.h>
+	"log.h"
+
+1596935543 d:\github\cproject\data_forwarding\log.h
+
+1596935613 source:d:\github\cproject\data_forwarding\event.c
+	"event.h"
+
+1596935281 d:\github\cproject\data_forwarding\event.h
+	<stdint.h>
+	"queue.h"
+
+1596935595 d:\github\cproject\data_forwarding\queue.h
+	<stdio.h>
+
