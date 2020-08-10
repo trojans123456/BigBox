@@ -51,7 +51,8 @@ LIB_SRCS_C = 		\
                 src/avl.c \
                 src/alloc.c \
                 src/list_safe.c \
-                src/kvlist.c
+                src/kvlist.c \
+		src/event.c
 
 	 	 
 LIB_OBJS=$(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(LIB_SRCS_C))
@@ -101,7 +102,6 @@ $(OBJDIR)/%.o:$(SRCDIR)/%.cpp
 	$(CPP) -c $(CFLAGS) $^ -o $@	 
 
 $(OBJDIR)/%.o:$(TESTDIR)/%.c
-	@[ ! -e $@ ] && mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) $^ -o $@ $(LDFLAGS) $(LDFLAGS)
 	
 rebuild: clean all

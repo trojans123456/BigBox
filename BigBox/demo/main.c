@@ -1,7 +1,13 @@
 #include <stdio.h>
+
+
 #include <string.h>
 #include <stdlib.h>
 
+#include "event.h"
+
+
+#if 0
 #include "avl.h"
 /**** avl test ****/
 
@@ -88,9 +94,30 @@ static void test_basics()
         free(elem);
     }
 }
+#endif
+
+void timeout_fun(struct event_timeout *ev)
+{
+    printf("xxxx\n");
+    event_timeout_set(ev,500);
+}
 
 int main(int argc,char *argv[])
 {
+#if 0
     test_basics();
+#endif
+    struct event_timeout timeout;
+    timeout.cb = timeout_fun;
+
+
+
+    event_loop_init();
+
+    event_timeout_add(&timeout);
+    event_timeout_set(&timeout,1000);
+
+    event_loop_run();
+
     return 0;
 }

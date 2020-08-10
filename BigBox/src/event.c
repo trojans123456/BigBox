@@ -1,7 +1,11 @@
 #ifndef __WIN32
     #include <sys/epoll.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <signal.h>
 #endif
 #include <stdlib.h>
+#include <string.h>
 
 #include "event.h"
 
@@ -80,7 +84,7 @@ static int __event_fd_delete(struct event_fd *fd)
 static int event_fetch_events(int timeout)
 {
     int n, nfds;
-    struct epoll_events events[EVENT_MAX_EVENTS];
+    struct epoll_event events[EVENT_MAX_EVENTS];
     struct event_fd *u = NULL;
 
     struct event_fd_event *cur = NULL;
@@ -107,8 +111,8 @@ static int event_fetch_events(int timeout)
 
         if (events[n].events & (EPOLLERR|EPOLLHUP)) {
             u->error = true;
-            if (!(u->flags & ULOOP_ERROR_CB))
-                uloop_fd_delete(u);
+            //if (!(u->flags & EVENT_ERROR))
+                event_fd_delete(u);
         }
 
         if(!(events[n].events & (EPOLLRDHUP|EPOLLIN|EPOLLOUT|EPOLLERR|EPOLLHUP))) {
@@ -120,10 +124,10 @@ static int event_fetch_events(int timeout)
             u->eof = true;
 
         if(events[n].events & EPOLLIN)
-            ev |= ULOOP_READ;
+            ev |= EVENT_READ;
 
         if(events[n].events & EPOLLOUT)
-            ev |= ULOOP_WRITE;
+            ev |= EVENT_WRITE;
 
         cur->events = ev;
     }
@@ -360,7 +364,6 @@ static void event_process_events(int timeout)
 /**
  * @brief 事件循环入口
  */
-static int event_cancelled = 0;
 void event_loop_run(void)
 {
     int next_time = 0;
