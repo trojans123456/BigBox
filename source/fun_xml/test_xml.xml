@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<TEST>
+    <!-- xxxx /-->
+
+
+    <topic name="test">
+        <addr>192.168.1.1</addr>
+        <port>6666</port>
+    </topic>
+
+
+
+</TEST>
