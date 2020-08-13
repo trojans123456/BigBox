@@ -1,1 +1,6 @@
 source/fun_ini
+source/fun_json
+source/fun_xml
+source/fun_list
+source/fun_rbtree
+source/fun_algorithm
