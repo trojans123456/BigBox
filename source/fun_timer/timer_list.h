@@ -4,6 +4,9 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <time.h>
+#include <sys/time.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -184,6 +187,7 @@ list_splice_tail_init(struct list_head *list, struct list_head *head)
 
 
 /***************** timer **************************/
+struct event_timeout;
 typedef void (*event_timeout_handler)(struct event_timeout *ev_tm);
 /**
  * @brief 监听定时事件
@@ -198,17 +202,10 @@ struct event_timeout
 
 int event_timeout_add(struct list_head *tm_head,struct event_timeout *ev_tm);
 int event_timeout_set(struct list_head *tm_head,struct event_timeout *ev_tm,int msecs);
-int event_timeout_cancel(struct list_head *tm_head,struct event_timeout *ev_tm);
-int event_timeout_remaining(struct list_head *tm_head,struct event_timeout *ev_tm);
+int event_timeout_cancel(struct event_timeout *ev_tm);
+int event_timeout_remaining(struct event_timeout *ev_tm);
 
-
-/**
- *@brief timer管理
-*/
-struct timer_manager
-{
-    struct list_head timeout_head;
-    int epfd;
-};
-
+void event_gettime(struct timeval *tv);
+int event_get_next_timeout(struct list_head *tm_head, struct timeval *tv);
+void event_process_timeouts(struct list_head *tm_head,struct timeval *tv);
 #endif

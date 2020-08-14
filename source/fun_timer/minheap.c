@@ -1,11 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "minheap.h"
 
-int32_t _minHeapInsert(struct minheap *this, \
-                                     int32_t key, void *data);
+int32_t _minHeapInsert(struct minheap *this,int32_t key, void *data);
 
-int32_t _minHeapPop(struct minheap *this, \
-                                  struct minHeapNode *node_);
+int32_t _minHeapPop(struct minheap *this,struct minHeapNode *node_);
 
 int32_t _minHeapDes(struct minheap *this);
 

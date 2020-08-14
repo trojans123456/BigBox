@@ -1,10 +1,19 @@
 #ifndef __MINHEAP_H
 #define __MINHEAP_H
 
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 struct minheap;
-struct minHeapNode{
-    int32_t key   ;
-    void    *data ;
+
+struct minHeapNode
+{
+    int32_t key;
+    void    *data;
 };
 
 
@@ -22,6 +31,8 @@ struct minheap{
 
 struct minheap * minHeapInit(int32_t maxNum);
 
-
+#ifdef __cplusplus
+}
+#endif
 
 #endif

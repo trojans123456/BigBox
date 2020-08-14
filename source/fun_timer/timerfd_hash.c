@@ -92,7 +92,7 @@ hash_iter_t *hash_lookup(hash_t *a_this,const void *a_key)
     //printf("h = %d",h);
     for(p = a_this->tab[h];p != (void*)0;p = p->next)
     {
-        printf("key = %s p->key = %s\n",a_key,p->key);
+        //printf("key = %s p->key = %s\n",a_key,p->key);
         if(a_this->ops->compare(a_key,p->key) == 0)
         {
             return p;
