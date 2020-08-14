@@ -17,3 +17,4 @@ source/fun_thread
 source/fun_struct
 source/fun_cstl
 source/fun_sort
+source/fun_event
