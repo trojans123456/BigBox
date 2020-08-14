@@ -48,7 +48,7 @@ LDFLAGS +=  -lpthread
 LIB_SRCS_C = 		\
                 thread_async.c \
                 thread_queue.c \
-                threadpoll.c \
+                threadpool.c \
                 test.c
 	 	 
 LIB_OBJS=$(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(LIB_SRCS_C))

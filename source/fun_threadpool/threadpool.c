@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "threadpoll.h"
+#include "threadpool.h"
 
 static void *threadpool_thread(void *threadpool)
 {
