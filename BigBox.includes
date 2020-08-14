@@ -10,3 +10,5 @@ source/fun_base
 source/fun_regex
 source/fun_string
 source/fun_threadpool
+source/fun_mempool
+source/fun_shell

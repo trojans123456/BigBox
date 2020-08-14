@@ -79,3 +79,9 @@ source/fun_threadpool/thread_async.h
 source/fun_threadpool/thread_async.c
 source/fun_threadpool/test.c
 source/fun_threadpool/Makefile
+source/fun_mempool/mempool.h
+source/fun_mempool/mempool.c
+source/fun_shell/sys_exec.h
+source/fun_shell/sys_exec.c
+source/fun_shell/test.c
+source/fun_shell/Makefile
