@@ -57,3 +57,9 @@ source/fun_timer/timerfd_hash.h
 source/fun_timer/test.c
 source/fun_rbtree/Makefile
 source/fun_rbtree/test.c
+source/fun_base/utility.h
+source/fun_base/utility.c
+source/fun_base/type_c.h
+source/fun_base/type_c.c
+source/fun_base/test.c
+source/fun_base/Makefile
