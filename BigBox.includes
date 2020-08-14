@@ -12,3 +12,4 @@ source/fun_string
 source/fun_threadpool
 source/fun_mempool
 source/fun_shell
+source/fun_time
