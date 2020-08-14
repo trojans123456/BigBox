@@ -15,3 +15,5 @@ source/fun_shell
 source/fun_time
 source/fun_thread
 source/fun_struct
+source/fun_cstl
+source/fun_sort
