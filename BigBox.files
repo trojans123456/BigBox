@@ -89,3 +89,9 @@ source/fun_time/utime.h
 source/fun_time/utime.c
 source/fun_time/test.c
 source/fun_time/Makefile
+source/fun_thread/thread.h
+source/fun_thread/thread.c
+source/fun_thread/resalloc.h
+source/fun_thread/resalloc.c
+source/fun_thread/test.c
+source/fun_thread/Makefile
