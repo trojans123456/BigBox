@@ -7,3 +7,5 @@ source/fun_algorithm
 source/fun_minheap
 source/fun_timer
 source/fun_base
+source/fun_regex
+source/fun_string

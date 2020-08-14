@@ -63,3 +63,11 @@ source/fun_base/type_c.h
 source/fun_base/type_c.c
 source/fun_base/test.c
 source/fun_base/Makefile
+source/fun_regex/regex.h
+source/fun_regex/regex.c
+source/fun_regex/test.c
+source/fun_regex/Makefile
+source/fun_string/stropt.h
+source/fun_string/stropt.c
+source/fun_string/test.c
+source/fun_string/Makefile
