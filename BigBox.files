@@ -95,3 +95,10 @@ source/fun_thread/resalloc.h
 source/fun_thread/resalloc.c
 source/fun_thread/test.c
 source/fun_thread/Makefile
+source/fun_struct/Makefile
+source/fun_struct/rbtree.c
+source/fun_struct/rbtree.h
+source/fun_struct/test.c
+source/fun_struct/map.h
+source/fun_struct/map.c
+source/fun_struct/queue_list.h
