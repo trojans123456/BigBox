@@ -62,6 +62,15 @@ source/fun_minheap/timerfd.c
 source/fun_minheap/timerfd.h
 source/fun_minheap/timerfd_hash.c
 source/fun_minheap/timerfd_hash.h
+source/fun_plugin/Makefile
+source/fun_plugin/kernel_list.h
+source/fun_plugin/modules/Makefile
+source/fun_plugin/modules/plugin_test1.c
+source/fun_plugin/modules/plugin_test2.c
+source/fun_plugin/modules/plugin_test3.c
+source/fun_plugin/plugin.c
+source/fun_plugin/plugin.h
+source/fun_plugin/test.c
 source/fun_rbtree/rbtree.c
 source/fun_rbtree/rbtree.h
 source/fun_sort/bsearch.c
