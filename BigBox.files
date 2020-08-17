@@ -162,3 +162,13 @@ source/fun_file/fio.c
 source/fun_file/io.c
 source/fun_file/test.c
 source/fun_file/Makefile
+source/fun_buffer/fifo.h
+source/fun_buffer/fifo.c
+source/fun_buffer/test.c
+source/fun_buffer/ringbuffer1.h
+source/fun_buffer/ringbuffer1.c
+source/fun_buffer/ringbuffer_simple.h
+source/fun_buffer/ringbuffer_simple.c
+source/fun_buffer/message_queue.h
+source/fun_buffer/message_queue.c
+source/fun_buffer/Makefile
