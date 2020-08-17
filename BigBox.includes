@@ -20,3 +20,4 @@ source/fun_sort
 source/fun_event
 source/fun_plugin
 source/fun_plugin/modules
+source/fun_file

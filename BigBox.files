@@ -156,3 +156,9 @@ source/fun_struct/map.h
 source/fun_struct/map.c
 source/fun_struct/queue_list.h
 source/fun_plugin/modules/build.sh
+source/fun_file/file.c
+source/fun_file/file.h
+source/fun_file/fio.c
+source/fun_file/io.c
+source/fun_file/test.c
+source/fun_file/Makefile
