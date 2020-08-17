@@ -45,7 +45,7 @@ void deinit()
 
 void foo()
 {
-    char *name = "plugin_ipc";
+    char *name = "plugin_test3";
     struct plugin *p = plugin_lookup(pm, name);
     if (!p) {
         printf("plugin_lookup %s failed!\n", name);

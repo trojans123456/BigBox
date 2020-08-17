@@ -1,11 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dlfcn.h>
+
+
 
 #include "plugin.h"
 
-struct plugin_manager *plugin_manager_create()
+struct plugin_manager {
+    struct list_head plugins;
+};
+
+plugin_manager_t *plugin_manager_create()
 {
     struct plugin_manager *pm = calloc(1, sizeof(struct plugin_manager));
     if (!pm) {
@@ -16,7 +21,7 @@ struct plugin_manager *plugin_manager_create()
     return pm;
 }
 
-void plugin_manager_destroy(struct plugin_manager *pm)
+void plugin_manager_destroy(plugin_manager_t *pm)
 {
     if (!pm) {
         return;

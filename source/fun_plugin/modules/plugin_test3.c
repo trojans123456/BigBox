@@ -9,5 +9,5 @@ static void *test3_open(void *arg)
 struct plugin plugin_test3 = {
     .name = "plugin_test3",
     .version = {1, 0, 0},
-    .open = test1_open,
+    .open = test3_open,
 };

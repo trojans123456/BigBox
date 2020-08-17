@@ -1,4 +1,7 @@
 #include <stdio.h>
+#ifndef __WIN32__
+#include <dlfcn.h>
+#endif
 #include "kernel_list.h"
 
 
@@ -25,16 +28,15 @@ struct plugin {
     struct list_head entry;
 };
 
-struct plugin_manager {
-    struct list_head plugins;
-};
+
+typedef struct plugin_manager plugin_manager_t;
 
 /**
  * @brief 插件管理
  * @return
  */
-struct plugin_manager *plugin_manager_create();
-void plugin_manager_destroy(struct plugin_manager *);
+plugin_manager_t *plugin_manager_create();
+void plugin_manager_destroy(plugin_manager_t *);
 
 
 struct plugin *plugin_lookup(struct plugin_manager *pm, const char *name);
