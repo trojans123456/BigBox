@@ -90,6 +90,19 @@ char *str_getline(char **src);
 */
 int str_strtoks2(const char *src,const char *delim,char **argv, int size);
 
+/* @param str         要被分割的字符串
+ * @param delims      分隔符，支持多个 ",\n,"
+ * @param save_ptr    Used internally by the function to record the start of
+ *                    the string after the last returned token so that search
+ *                    can continue.
+ * @param delim_found Returns the delimeter that preceeded the token returned
+ *
+ * @return A pointer to the next token found. This may be the empty string if
+ *         consequtive delimeters are found. It will be NULL after the last
+ *         token has been found.
+ */
+char* estrtok_r(char *const str, char const *const delims, char **save_ptr, char *const delim_found);
+
 
 #ifdef __cplusplus
 }

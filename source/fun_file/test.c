@@ -145,6 +145,114 @@ int file_watcher_foo()
 }
 #endif
 
+#if 0
+/**
+从FILE中按行读取数据存入buffer中
+*/
+#define LINE_BUF_SIZE_BYTES 256
+
+static bool buffer_contains_newline(const char *const buffer)
+{
+    return strchr(buffer, (int)'\n') != NULL;
+}
+
+int read_line(FILE *const fhnd, char **const buffer, size_t *const usr_buff_size)
+{
+    int error_number;
+    char *result;
+    char *line_buff;
+    char *buff_pos;
+    size_t buff_size;
+
+    /* The initial buffer size may be different to the expansion size so
+     * for first iteration this is probably user defined, and then in latter
+     * iterations is just LINE_BUF_SIZE_BYTES */
+    size_t block_size;
+
+    if (!buffer || !usr_buff_size) {
+        return -EINVAL;
+    }
+
+    if (feof(fhnd)) {
+        if (*buffer) {
+            **buffer = '\0';
+        }
+        return 0;
+    }
+
+    if (!*buffer) {
+        line_buff = malloc(LINE_BUF_SIZE_BYTES);
+        if (!line_buff) {
+            return -ENOMEM;
+        }
+        line_buff[0] = '\0';
+
+        buff_size = LINE_BUF_SIZE_BYTES;
+        block_size = LINE_BUF_SIZE_BYTES;
+    }
+    else {
+        line_buff = *buffer;
+        buff_size = *usr_buff_size;
+        block_size = buff_size;
+    }
+
+    buff_pos = line_buff;
+
+    while (1)
+    {
+        result = fgets(buff_pos, (int)block_size, fhnd);
+        if (!result) {
+            /* NULL means error or feof with zero chars read. */
+            if (ferror(fhnd)) {
+                goto _error;
+            }
+            /* else: covered by check for feof() at start of function */
+        }
+
+        if (feof(fhnd)) {
+            break;
+        }
+
+        if (!buffer_contains_newline(buff_pos)) {
+            /* No newline terminator found and no eof so buffer will be full - must resize so we
+             * can continue to read in this line */
+            char *tmp_buff_ptr = realloc(line_buff, buff_size + LINE_BUF_SIZE_BYTES);
+            if (!tmp_buff_ptr)
+                goto _error;
+
+            line_buff  = tmp_buff_ptr;
+            buff_pos   = line_buff + buff_size - 1u;
+            buff_size += LINE_BUF_SIZE_BYTES;
+            block_size = LINE_BUF_SIZE_BYTES + 1u;
+        }
+        else {
+            break;
+        }
+    }
+
+    *buffer = line_buff;
+    *usr_buff_size = buff_size;
+    return 1;
+
+_error:
+    error_number = errno;
+
+    if (!*buffer) {
+        /* We allocated the buffer, not the user, so just free it. */
+        free(line_buff);
+    }
+    else  {
+        /* The user allocated the buffer so return a pointer to the last
+         * properly realloc()'ed buffer (not updated in the loop to save the
+         * extra write */
+        *buffer = line_buff;
+    }
+
+    return error_number;
+}
+
+#endif
+
 int main(int argc, char **argv)
 {
     uint64_t size = 1000;

@@ -50,6 +50,7 @@ LIB_SRCS_C = 		\
                 message_queue.c \
                 ringbuffer1.c \
                 ringbuffer_simple.c \
+                data_buffer.c \
                 test.c
 	 	 
 LIB_OBJS=$(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(LIB_SRCS_C))

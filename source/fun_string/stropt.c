@@ -383,3 +383,53 @@ int str_strtoks2(const char *src,const char *delim,char **argv, int size)
     return i;
 
 }
+
+/**
+ char *str = ",File,,James,Poo,Head\nSome,one\nElse,lives,here,in,  the,jungle,";
+   counter = 0;
+   tok = estrtok_r(str, ",\n", &save_ptr, &delim);
+   while(tok)
+   {
+      printf("Token %d: \"%s\". Delim: \"%c\"\n", counter, tok, delim);
+      ++counter;
+      tok = estrtok_r(NULL, ",\n", &save_ptr, &delim);
+   }
+ */
+char* estrtok_r(char *const str, char const *const delims, char **save_ptr, char *const delim_found)
+{
+   char *del;
+
+   /* First call `str` should not be NULL. In subsequent calls `save_ptr` is used to remember
+    * the position after the last delimeter found in the previous call. */
+   char *start = str ? str : *save_ptr;
+
+   if (start == NULL)
+      return NULL;
+
+   if (*start == '\0') {
+      /* We hit the end of the string being searched or are searching an emptry string. */
+      if (*delim_found != '\0') {
+         *delim_found = '\0';
+         *save_ptr = NULL;
+         return start;
+      }
+      else
+         return NULL;
+   }
+
+   /* Search string for any chars in delims */
+   del = strpbrk(start, delims);
+   if(!del) {
+      /* No delimiter was found */
+      *delim_found = '\0';
+      *save_ptr = NULL;
+      return start;
+   }
+
+   /* Delimeter was found... */
+   *delim_found = *del; /* Save the delimeter character */
+   *del = '\0';         /* Set the delimeter to NULL */
+   *save_ptr = del + 1; /* Set the saved position to one after the delimeter */
+   return start;        /* Return the string - the delimeter was replaced with
+                         * NULL like strtok would have done */
+}

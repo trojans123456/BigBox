@@ -1,4 +1,8 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include "data_buffer.h"
 #include "message_queue.h"
 struct message_queue mq;
 
@@ -49,6 +53,23 @@ int main(int argc,char *argv[])
     {
         printf("item = %s\n",item->start);
     }
+
+    Buffer *buf = buffer_alloc(2);
+    if(!buf)
+    {
+        printf("create buffer failed\n");
+        return 0;
+    }
+
+    buffer_appendf(buf,"aa%d",10);
+
+    char *str = buffer_to_string(buf);
+    if(str)
+        printf("str = %s\n",str);
+    if(str)
+        free(str);
+
+    buffer_free(buf);
 
     return 0;
 }
