@@ -22,3 +22,6 @@ source/fun_plugin
 source/fun_plugin/modules
 source/fun_file
 source/fun_buffer
+source/fun_ipc
+source/fun_network
+source/fun_device
