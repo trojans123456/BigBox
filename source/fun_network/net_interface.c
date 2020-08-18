@@ -12,7 +12,7 @@
 #include <netinet/ip_icmp.h>
 #include <sys/time.h>
 
-#include "network.h"
+#include "net_interface.h"
 
 int net_set_nonblock(int sockfd)
 {

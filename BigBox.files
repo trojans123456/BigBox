@@ -211,3 +211,7 @@ source/fun_ipc/ipc_mq_systemv.c
 source/fun_ipc/ipc_shm.c
 source/fun_ipc/ipc_unix_socket.c
 source/fun_ipc/ipc_netlink.c
+source/fun_network/net.h
+source/fun_network/net.c
+source/fun_network/test.c
+source/fun_network/Makefile
