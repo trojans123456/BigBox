@@ -66,7 +66,6 @@ source/fun_event/event.h
 source/fun_event/event.h
 source/fun_event/poll.c
 source/fun_event/select.c
-source/fun_ipc/ipc_mmap.c
 source/fun_ipc/ipc_msgbuf.c
 source/fun_ipc/ipc_sem.c
 source/fun_ipc/ipc_shm.c
@@ -196,3 +195,19 @@ source/fun_buffer/message_queue.c
 source/fun_buffer/Makefile
 source/fun_buffer/data_buffer.h
 source/fun_buffer/data_buffer.c
+source/fun_ipc/ipc.h
+source/fun_ipc/ipc.c
+source/fun_ipc/ipc_mkfifo.c
+source/fun_ipc/ipc_test/ipc_mmap.c
+source/fun_ipc/ipc_test/ipc_msgbuf.c
+source/fun_ipc/ipc_test/ipc_sem.c
+source/fun_ipc/ipc_test/ipc_shm.c
+source/fun_ipc/ipc_test/ipc_sig.c
+source/fun_ipc/ipc_test/test.c
+source/fun_ipc/ipc_mq_posix.c
+source/fun_ipc/Makefile
+source/fun_ipc/test.c
+source/fun_ipc/ipc_mq_systemv.c
+source/fun_ipc/ipc_shm.c
+source/fun_ipc/ipc_unix_socket.c
+source/fun_ipc/ipc_netlink.c

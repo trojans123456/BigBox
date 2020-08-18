@@ -1,33 +1,96 @@
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/ipc.h>
 #include <sys/shm.h>
 
-/**
- *int shmget(key_t key,size_t size,int shmflg); //shmget 函数用来创建一个
-新的共享内存段， 或者访问一个现有的共享内存段（不同进程只要 key 值相同即可访问
-同一共享内存段） 。 第一个参数 key 是 ftok 生成的键值， 第二个参数 size 为共享内存的
-大小， 第三个参数 sem_flags 是打开共享内存的方式。
+#include "ipc.h"
+
+#define SHM_KEY 987654321
+#define SHM_SIZE    1024
 
 
-2.eg.int shmid = shmget(key, 1024, IPC_CREATE | IPC_EXCL | 0666);//第三个
-参数参考消息队列 int msgget(key_t key,int msgflag);
+struct shm_ctx {
+    int shmid;
+    void *parent;
+};
 
 
-3. void *shmat(int shm_id,const void *shm_addr,int shmflg); //shmat 函数
-通过 shm_id 将共享内存连接到进程的地址空间中。 第二个参数可以由用户指定共享内存
-映射到进程空间的地址， shm_addr 如果为 0， 则由内核试着查找一个未映射的区域。 返回
-值为共享内存映射的地址。
+static void *shm_init(struct ipc *ipc, uint16_t port, enum ipc_role role)
+{
+    struct shm_ctx *ctx = calloc(1,sizeof(struct shm_ctx));
+    if(!ctx)
+        return NULL;
+
+    int shmid = shmget(SHM_KEY,SHM_SIZE,IPC_CREAT | IPC_EXCL | 0666);
+    if(shmid < 0)
+    {
+        goto error;
+    }
+
+    ctx->parent = ipc;
+    ipc->ctx = ctx;
+    ctx->shmid = shmid;
+
+    return ctx;
+error:
+    if(ctx)
+        free(ctx);
+    return NULL;
+}
 
 
-4. eg.char *shms = (char *)shmat(shmid, 0, 0);//shmid 由 shmget 获得
+static void shm_deinit(struct ipc *ipc)
+{
+    if(ipc && ipc->ctx)
+    {
+        struct shm_ctx *ctx = (struct shm_ctx *)ipc->ctx;
+        shmctl(ctx->shmid,IPC_RMID,0);
+    }
+}
 
-5. int shmdt(const void *shm_addr); //shmdt 函数将共享内存从当前进程中分
-离。 参数为共享内存映射的地址。
-6. eg.shmdt(shms);
 
-7. int shmctl(int shm_id,int cmd,struct shmid_ds *buf);//shmctl 函数是控制
-函数， 使用方法和消息队列 msgctl()函数调用完全类似。 参数一 shm_id 是共享内存的句
-柄， cmd 是向共享内存发送的命令， 最后一个参数 buf 是向共享内存发送命令的参数
- *
- *
-*/
+static int shm_write(struct ipc *ipc, const void *buf, size_t len)
+{
+    struct shm_ctx *ctx = (struct shm_ctx *)ipc->ctx;
+    void *shm = shmat(ctx->shmid,0,0);
+    if(shm == (void *)-1)
+    {
+        return -1;
+    }
+
+    memcpy(shm,buf,(len > SHM_SIZE ? SHM_SIZE : len));
+
+    shmdt(shm);
+
+    return 0;
+}
+
+static int shm_read(struct ipc *ipc, void *buf, size_t len)
+{
+    struct shm_ctx *ctx = (struct shm_ctx *)ipc->ctx;
+    void *shm = shmat(ctx->shmid,0,0);
+    if(shm == (void *)-1)
+    {
+        return -1;
+    }
+
+    memcpy(buf,shm,(len > SHM_SIZE ? SHM_SIZE : len));
+
+    shmdt(shm);
+
+    return 0;
+}
+
+
+struct ipc_ops shm_ops = {
+    .init             = shm_init,
+    .deinit           = shm_deinit,
+    .accept           = NULL,
+    .connect          = NULL,
+    .register_recv_cb = NULL,
+    .send             = shm_write,
+    .recv             = shm_read,
+};
