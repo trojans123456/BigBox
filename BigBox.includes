@@ -26,3 +26,4 @@ source/fun_ipc
 source/fun_network
 source/fun_device
 source/fun_ipc/ipc_test
+source/fun_mempool/ngix_mempool

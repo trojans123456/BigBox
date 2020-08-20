@@ -215,3 +215,15 @@ source/fun_network/net.h
 source/fun_network/net.c
 source/fun_network/test.c
 source/fun_network/Makefile
+source/fun_mempool/ngix_mempool/bench.c
+source/fun_mempool/ngix_mempool/main.c
+source/fun_mempool/ngix_mempool/Makefile
+source/fun_mempool/ngix_mempool/ncx_core.h
+source/fun_mempool/ngix_mempool/ncx_lock.h
+source/fun_mempool/ngix_mempool/ncx_log.h
+source/fun_mempool/ngix_mempool/ncx_slab.c
+source/fun_mempool/ngix_mempool/ncx_slab.c.orz
+source/fun_mempool/ngix_mempool/ncx_slab.h
+source/fun_mempool/ngix_mempool/ncx_slab.o
+source/fun_mempool/ngix_mempool/pool_test
+source/fun_mempool/ngix_mempool/README.md
