@@ -49,6 +49,7 @@ source/fun_device/gpio.c
 source/fun_device/gpio.h
 source/fun_device/i2c.c
 source/fun_device/i2c.h
+source/fun_device/reg.h
 source/fun_device/rtc.c
 source/fun_device/rtc.h
 source/fun_device/serial.c
@@ -94,6 +95,15 @@ source/fun_plugin/test.c
 source/fun_protocol/ftp/e_client.c
 source/fun_protocol/ftp/e_ftp.c
 source/fun_protocol/ftp/e_ftp.h
+source/fun_protocol/http/bench.c
+source/fun_protocol/http/bench.c
+source/fun_protocol/http/e_http.c
+source/fun_protocol/http/e_http.h
+source/fun_protocol/http/get_client.c
+source/fun_protocol/http/http_parser.c
+source/fun_protocol/http/http_parser.c
+source/fun_protocol/http/http_parser.h
+source/fun_protocol/http/http_parser.h
 source/fun_protocol/modbus/master/mbcoils.c
 source/fun_protocol/modbus/master/mbcoils.h
 source/fun_protocol/modbus/master/mbregs.c
