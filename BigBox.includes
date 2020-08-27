@@ -28,3 +28,4 @@ source/fun_device
 source/fun_ipc/ipc_test
 source/fun_mempool/ngix_mempool
 source/fun_protocol/ymodem
+source/fun_protocol/modbus

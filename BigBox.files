@@ -233,3 +233,5 @@ source/fun_protocol/ymodem/sys_porting.h
 source/fun_protocol/ymodem/test.c
 source/fun_protocol/ymodem/ymodem.c
 source/fun_protocol/ymodem/ymodem.h
+source/fun_protocol/modbus/modbus.h
+source/fun_protocol/modbus/modbus.c
