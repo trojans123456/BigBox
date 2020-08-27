@@ -29,3 +29,7 @@ source/fun_ipc/ipc_test
 source/fun_mempool/ngix_mempool
 source/fun_protocol/ymodem
 source/fun_protocol/modbus
+source/fun_protocol/modbus/master
+source/fun_protocol/modbus/slave
+source/fun_protocol/ftp
+source/fun_protocol/mqtt
