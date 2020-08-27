@@ -227,3 +227,9 @@ source/fun_mempool/ngix_mempool/ncx_slab.h
 source/fun_mempool/ngix_mempool/ncx_slab.o
 source/fun_mempool/ngix_mempool/pool_test
 source/fun_mempool/ngix_mempool/README.md
+source/fun_protocol/ymodem/Makefile
+source/fun_protocol/ymodem/sys_porting.c
+source/fun_protocol/ymodem/sys_porting.h
+source/fun_protocol/ymodem/test.c
+source/fun_protocol/ymodem/ymodem.c
+source/fun_protocol/ymodem/ymodem.h
