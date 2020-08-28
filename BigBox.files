@@ -262,3 +262,8 @@ source/fun_protocol/ymodem/ymodem.c
 source/fun_protocol/ymodem/ymodem.h
 source/fun_protocol/modbus/modbus.h
 source/fun_protocol/modbus/modbus.c
+source/fun_device/mmc/Makefile
+source/fun_device/mmc/mmc.c
+source/fun_device/mmc/mmc.h
+source/fun_device/mmc/mmc_cmds.c
+source/fun_device/mmc/mmc_cmds.h
