@@ -11,8 +11,8 @@ struct list_node
 
 struct __list
 {
-    size_t size; /* ¸öÊı */
-    size_t typesize; /* Êı¾İÀàĞÍ´óĞ¡ */
+    size_t size; /* ä¸ªæ•° */
+    size_t typesize; /* æ•°æ®ç±»å‹å¤§å° */
     list_ops_t *list_ops;
     struct list_head head;
 };
@@ -190,10 +190,11 @@ list_iterator_t list_find(list_t *a_this,void *data)
 
 }
 
-/* ·­×ª */
+/* ç¿»è½¬ */
 void reverse_list(list_t *a_this)
 {
-
+    /*å¾ªç¯åŒå‘é“¾è¡¨æ²¡å¿…è¦ */
+   
 }
 
 void list_clear(list_t *a_this)
@@ -201,7 +202,7 @@ void list_clear(list_t *a_this)
 
 }
 
-/*ºÏ²¢ */
+/*åˆå¹¶ */
 list_t *list_merge(list_t *list1,list_t *list2)
 {
 
