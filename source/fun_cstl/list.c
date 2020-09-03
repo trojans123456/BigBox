@@ -194,7 +194,19 @@ list_iterator_t list_find(list_t *a_this,void *data)
 void reverse_list(list_t *a_this)
 {
     /*循环双向链表没必要 */
-   
+    struct list_head *pnode = &a_this->head;
+    struct list_head *prev = NULL;
+    struct list_head *pnext = NULL;
+    
+    while(pnode)
+    {
+        pnext = pnode->next; 
+        pnode->next = prev;
+        pnode->prev = pnext;
+        prev = pnode;
+        pnode = pnext;
+    }
+    a_this->head = *prev;
 }
 
 void list_clear(list_t *a_this)
