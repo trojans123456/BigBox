@@ -37,3 +37,5 @@ source/fun_protocol/http
 source/fun_device/mmc
 source/fun_driver
 source/fun_hardware/serial
+source/fun_hardware/gpio
+source/fun_hardware/spi

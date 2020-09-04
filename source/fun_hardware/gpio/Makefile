@@ -46,7 +46,7 @@ CFLAGS	+= -I ./
 ###################OBJ文件及路径############################################
 
 LIB_SRCS_C = 		\
-                serial2.c \
+                gpio.c \
                 test.c
 	 	 
 LIB_OBJS=$(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(LIB_SRCS_C))
