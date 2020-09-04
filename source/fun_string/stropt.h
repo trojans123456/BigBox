@@ -104,6 +104,10 @@ int str_strtoks2(const char *src,const char *delim,char **argv, int size);
 char* estrtok_r(char *const str, char const *const delims, char **save_ptr, char *const delim_found);
 
 
+int my_atoi(const char *s);
+
+long int my_atol(const char *s);
+
 #ifdef __cplusplus
 }
 #endif

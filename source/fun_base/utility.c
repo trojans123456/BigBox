@@ -312,3 +312,59 @@ int check_sys()
         return 0;
     }
 }
+
+const static char* const ascii_table = "0123456789ABCDEF";
+
+
+int hex_to_ascii(const uint8_t* in_data, uint32_t in_len, uint8_t* out_buf, uint32_t* out_len)
+{
+    int32_t i;
+    uint8_t v;
+    uint8_t high, low;
+
+    for (i = in_len - 1; i >= 0; i--)
+    {
+        v = in_data[i];
+        high = (v >> 4) & 0x0F;
+        low = (v & 0x0F);
+
+        out_buf[(i << 1)] = ascii_table[high];
+        out_buf[(i << 1) + 1] = ascii_table[low];
+    }
+    *out_len = in_len << 1;
+    return 0;
+}
+
+
+int ascii_to_hex(const uint8_t* in_data, uint32_t in_len, uint8_t* out_buf, uint32_t* out_len)
+{
+    uint32_t i = 0;
+    uint32_t j = 0;
+    int h;
+    int l;
+    if ((in_data == NULL) || (out_buf == NULL) || (in_len % 2) != 0)
+    {
+        return -1;
+    }
+    if ((in_len >> 1) > *out_len)
+    {
+        return -1;
+    }
+    while (i < in_len)
+    {
+        h = char_to_hex(in_data[i]);
+        if (h < 0)
+        {
+            return -1;
+        }
+        l = char_to_hex(in_data[i + 1]);
+        if (l < 0)
+        {
+            return -1;
+        }
+        out_buf[j++] = (uint8_t)((h << 4) | (l & 0x0F));
+        i += 2;
+    }
+    *out_len = j;
+    return 0;
+}

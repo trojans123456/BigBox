@@ -35,3 +35,4 @@ source/fun_protocol/ftp
 source/fun_protocol/mqtt
 source/fun_protocol/http
 source/fun_device/mmc
+source/fun_driver

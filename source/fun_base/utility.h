@@ -214,6 +214,11 @@ void HexStrToByte(const char* source, unsigned char* dest, int sourceLen);
 //检查大小端
 int check_sys();
 
+
+int hex_to_ascii(const uint8_t* in_data, uint32_t in_len, uint8_t* out_buf, uint32_t* out_len);
+int ascii_to_hex(const uint8_t* in_data, uint32_t in_len, uint8_t* out_buf, uint32_t* out_len);
+
+
 #ifdef __cplusplus
 }
 #endif

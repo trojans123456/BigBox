@@ -433,3 +433,41 @@ char* estrtok_r(char *const str, char const *const delims, char **save_ptr, char
    return start;        /* Return the string - the delimeter was replaced with
                          * NULL like strtok would have done */
 }
+
+
+int my_atoi(const char* s)
+{
+    long int v=0;
+    int sign=1;
+    while ( *s == ' '  ||  (unsigned int)(*s - 9) < 5u) s++;
+    switch (*s)
+    {
+    case '-':
+        sign=-1;
+    case '+':
+        ++s;
+    }
+    while ((unsigned int) (*s - '0') < 10u)
+    {
+        v=v*10+*s-'0';
+        ++s;
+    }
+    return sign==-1?-v:v;
+}
+
+long int my_atol(const char* s)
+{
+    long int v=0;
+    int sign=0;
+    while ( *s == ' '  ||  (unsigned int)(*s - 9) < 5u) ++s;
+    switch (*s)
+    {
+        case '-': sign=-1;
+        case '+': ++s;
+    }
+    while ((unsigned int) (*s - '0') < 10u)
+    {
+        v=v*10+*s-'0'; ++s;
+    }
+    return sign?-v:v;
+}

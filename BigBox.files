@@ -267,3 +267,5 @@ source/fun_device/mmc/mmc.c
 source/fun_device/mmc/mmc.h
 source/fun_device/mmc/mmc_cmds.c
 source/fun_device/mmc/mmc_cmds.h
+source/fun_driver/drv_module.c
+source/fun_driver/readme.txt
