@@ -293,3 +293,11 @@ source/fun_hardware/i2c/i2c.h
 source/fun_hardware/i2c/i2c.c
 source/fun_hardware/i2c/test.c
 source/fun_hardware/i2c/Makefile
+source/fun_hardware/pwm/pwm.h
+source/fun_hardware/pwm/pwm.c
+source/fun_hardware/pwm/file.c
+source/fun_hardware/pwm/file.h
+source/fun_hardware/pwm/Makefile
+source/fun_hardware/pwm/pwm.c
+source/fun_hardware/pwm/pwm.h
+source/fun_hardware/pwm/test.c
