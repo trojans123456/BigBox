@@ -289,3 +289,7 @@ source/fun_hardware/spi/spi.c
 source/fun_hardware/spi/spi.h
 source/fun_hardware/spi/Makefile
 source/fun_hardware/spi/test.c
+source/fun_hardware/i2c/i2c.h
+source/fun_hardware/i2c/i2c.c
+source/fun_hardware/i2c/test.c
+source/fun_hardware/i2c/Makefile

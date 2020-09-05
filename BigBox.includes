@@ -39,3 +39,4 @@ source/fun_driver
 source/fun_hardware/serial
 source/fun_hardware/gpio
 source/fun_hardware/spi
+source/fun_hardware/i2c

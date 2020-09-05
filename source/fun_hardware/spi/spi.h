@@ -37,7 +37,7 @@ typedef enum spi_bit_order {
     LSB_FIRST,
 } spi_bit_order_t;
 
-/* Primary Functions */
+/* Primary Functions  path = /dev/spidev%d.%d*/
 int spi_open(spi_t *spi, const char *path, unsigned int mode,
                 uint32_t max_speed);
 int spi_open_advanced(spi_t *spi, const char *path, unsigned int mode,
