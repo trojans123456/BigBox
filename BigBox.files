@@ -58,6 +58,7 @@ source/fun_device/spi.c
 source/fun_device/spi.h
 source/fun_device/watchdog.c
 source/fun_device/watchdog.h
+source/fun_driver/drv_cdev.c
 source/fun_event/darray.c
 source/fun_event/darray.h
 source/fun_event/epoll.c
