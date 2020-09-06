@@ -105,6 +105,8 @@ source/fun_protocol/http/http_parser.c
 source/fun_protocol/http/http_parser.c
 source/fun_protocol/http/http_parser.h
 source/fun_protocol/http/http_parser.h
+source/fun_protocol/http/linux/http.c
+source/fun_protocol/http/linux/http.h
 source/fun_protocol/modbus/master/mbcoils.c
 source/fun_protocol/modbus/master/mbcoils.h
 source/fun_protocol/modbus/master/mbregs.c

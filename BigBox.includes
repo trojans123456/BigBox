@@ -41,3 +41,4 @@ source/fun_hardware/gpio
 source/fun_hardware/spi
 source/fun_hardware/i2c
 source/fun_hardware/pwm
+source/fun_protocol/http/linux
