@@ -82,3 +82,83 @@ int sysinfo_free()
 
     return 1;
 }
+
+float get_cpuUsage()
+{
+    FILE *fp;
+    char buf[128];
+    char cpu[5];
+    long int user,nice,sys,idle,iowait,irq,softirq;
+
+    long int all1,all2,idle1,idle2;
+    float usage;
+
+    char result[32] = "";
+    fp = fopen("/proc/stat","r");
+    if(fp == NULL)
+    {
+        return "";
+    }
+
+
+    fgets(buf,sizeof(buf),fp);
+    sscanf(buf,"%s%ld%ld%ld%ld%ld%ld%ld",cpu,&user,&nice,&sys,&idle,&iowait,&irq,&softirq);
+
+    all1 = user+nice+sys+idle+iowait+irq+softirq;
+    idle1 = idle;
+    rewind(fp);
+    /*第二次取数据*/
+    sleep(1);
+    memset(buf,0,sizeof(buf));
+    cpu[0] = '\0';
+    user=nice=sys=idle=iowait=irq=softirq=0;
+    fgets(buf,sizeof(buf),fp);
+    //printf("buf=%s",buf);
+    sscanf(buf,"%s%ld%ld%ld%ld%ld%ld%ld",cpu,&user,&nice,&sys,&idle,&iowait,&irq,&softirq);
+
+    all2 = user+nice+sys+idle+iowait+irq+softirq;
+    idle2 = idle;
+
+    usage = (float)(all2-all1-(idle2-idle1)) / (all2-all1)*100 ;
+
+
+    //sprintf(result,"%.2f%%",usage);
+    fclose(fp);
+
+    return result;
+}
+
+struct Total_Cpu_Occupy_t{
+    unsigned long user;
+    unsigned long nice;
+    unsigned long system;
+    unsigned long idle;
+};
+
+
+struct Proc_Cpu_Occupy_t{
+    unsigned int pid;
+    unsigned long utime;  //user time
+    unsigned long stime;  //kernel time
+    unsigned long cutime; //all user time
+    unsigned long cstime; //all dead time
+};
+
+unsigned long get_cpu_total_occupy()
+{
+    FILE *fd;
+    char buff[1024]={0};
+    struct Total_Cpu_Occupy_t t;
+
+    fd =fopen("/proc/stat","r");
+    if (NULL == fd){
+        return 0;
+    }
+
+    fgets(buff,sizeof(buff),fd);
+    char name[64]={0};
+    sscanf(buff,"%s %ld %ld %ld %ld",name,&t.user,&t.nice,&t.system,&t.idle);
+    fclose(fd);
+    //	printf("cpu-buff:%s \n",buff);
+    return (t.user + t.nice + t.system + t.idle);
+}
