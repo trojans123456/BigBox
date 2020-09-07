@@ -304,3 +304,4 @@ source/fun_hardware/pwm/Makefile
 source/fun_hardware/pwm/pwm.c
 source/fun_hardware/pwm/pwm.h
 source/fun_hardware/pwm/test.c
+source/fun_driver/mach-platform/mach-device.c
