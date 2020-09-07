@@ -117,7 +117,27 @@ char *str_Trim(char *val,const char *cfg)
     return val;
 }
 
+void trim(char *s)
+{
+    int len = strlen(s);
+    int lws;
 
+    /* 删除尾部空格*/
+    while(len && isspace(s[len-1]))
+        --len;
+
+    /* 删除前面的空格*/
+    if(len)
+    {
+        lws = strspn(s,"\n\r\t\v");
+        if(lws)
+        {
+            len -= lws;
+            memmove(s,s + lws,len);
+        }
+    }
+    s[len] = '\0';
+}
 
 /*
 * @brief 从str字符串中的第几个位置搜索from

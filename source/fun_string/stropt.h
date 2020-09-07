@@ -26,6 +26,12 @@ char *deblank(char *str);
 */
 char *str_Trim(char *val,const char *cfg);
 
+/**
+ * @brief 前后空格
+ * @param s
+ */
+void trim(char *s);
+
 /*
 * @brief 从str字符串中的第几个位置搜索from
 * @params
