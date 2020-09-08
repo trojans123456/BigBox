@@ -44,3 +44,4 @@ source/fun_hardware/pwm
 source/fun_protocol/http/linux
 source/fun_driver/mach-platform
 source/fun_proc
+source/fun_driver/doc
