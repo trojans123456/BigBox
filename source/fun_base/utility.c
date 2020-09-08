@@ -368,3 +368,30 @@ int ascii_to_hex(const uint8_t* in_data, uint32_t in_len, uint8_t* out_buf, uint
     *out_len = j;
     return 0;
 }
+
+static unsigned int _seed = 1;
+void my_srand(unsigned int seed)
+{
+    _seed = seed;
+}
+
+int my_rand_r(unsigned int *seed)
+{
+#define M   ((1U << 31) - 1)
+#define A   48271
+#define Q   44488       // M / A
+#define R   3399        // M%A; R < Q
+
+    int X;
+    X = *seed;
+    X = A * (X % Q) - R * (int)(X/Q);
+    if(X < 0)
+        X += M;
+    *seed = X;
+    return X;
+}
+
+int my_rand()
+{
+    return my_rand_r(&_seed);
+}

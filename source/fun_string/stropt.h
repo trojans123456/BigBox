@@ -114,6 +114,15 @@ int my_atoi(const char *s);
 
 long int my_atol(const char *s);
 
+/**
+ * @brief 生成字符串随机数
+ * @param length
+ * @return
+ */
+char *rand_string1(int length);
+
+char *rand_string2(char *result, int length, size_t charLimit);
+
 #ifdef __cplusplus
 }
 #endif

@@ -219,6 +219,13 @@ int hex_to_ascii(const uint8_t* in_data, uint32_t in_len, uint8_t* out_buf, uint
 int ascii_to_hex(const uint8_t* in_data, uint32_t in_len, uint8_t* out_buf, uint32_t* out_len);
 
 
+/**
+ * @brief 随机数
+ * @param seed
+ */
+void my_srand(unsigned int seed);
+int my_rand(void);
+
 #ifdef __cplusplus
 }
 #endif
