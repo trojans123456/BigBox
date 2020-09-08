@@ -9,6 +9,8 @@ source/fun_algorithm/md5.h
 source/fun_algorithm/sha.c
 source/fun_algorithm/sha.h
 source/fun_algorithm/test.c
+source/fun_buffer/msg_buf.c
+source/fun_buffer/msg_buf.h
 source/fun_cstl/Makefile
 source/fun_cstl/Makefile
 source/fun_cstl/alloc_p.h
