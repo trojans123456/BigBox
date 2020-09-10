@@ -17,6 +17,9 @@ typedef struct
     int priority;
     int tid;
     int flag;
+#if 0
+    sigset_t sig;
+#endif
     thread_fun_ptr task;
     void **args;
 }thread_context_t;
@@ -95,6 +98,13 @@ static void *inner_task(void *args)
         return NULL;
     }
 
+#if 0
+    sigemptyset(&(th->sig));
+    sigaddset(&(th->sig),SIGUSR1);
+    /* /设置该线程的信号屏蔽字为SIGUSR1 */
+    pthread_sigmask(SIG_BLOCK,&(th->sig),NULL);
+#endif
+
     th->tid = pthread_self();
 
     void *ret = th->task(*(th->args));
@@ -142,7 +152,31 @@ thread_t *ThreadCreate2(const char *name, thread_fun_ptr func, void *args, int s
         return NULL;
     }
 #endif
+
+#if 0
+    /* 注册 */
+    struct sigaction act;
+    act.sa_handler = SIG_IGN;/*ignore*/
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    sigaction(SIGUSR1,&act,0);
+#endif
     return (thread_t *)th;
+}
+
+int ThreadWakeup(thread_t *a_th)
+{
+    thread_context_t *th = (thread_context_t *)a_th;
+    if(th)
+        pthread_kill(th->sig,SIGUSR1);
+}
+
+int ThreadWait(thread_t *a_th)
+{
+    int signum;
+    thread_context_t *th = (thread_context_t *)a_th;
+    sigwait(&(th->sig),&signum);
+    return signum;
 }
 
 int ThreadStart(thread_t *a_th)
