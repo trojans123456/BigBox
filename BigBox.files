@@ -312,3 +312,10 @@ source/fun_proc/free.c
 source/fun_proc/test.c
 source/fun_proc/Makefile
 source/fun_driver/doc/doc.txt
+source/fun_buffer/sbuf.c
+source/fun_buffer/sbuf.h
+source/fun_ini/ini/parser_ini.h
+source/fun_ini/ini_2/inirw.c
+source/fun_ini/ini_2/inirw.h
+source/fun_ini/ini_2/Makefile
+source/fun_ini/ini_2/test.c

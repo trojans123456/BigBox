@@ -45,3 +45,5 @@ source/fun_protocol/http/linux
 source/fun_driver/mach-platform
 source/fun_proc
 source/fun_driver/doc
+source/fun_ini/ini
+source/fun_ini/ini_2
