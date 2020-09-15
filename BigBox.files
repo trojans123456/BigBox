@@ -321,3 +321,12 @@ source/fun_ini/ini_2/Makefile
 source/fun_ini/ini_2/test.c
 source/fun_sort/qsort.h
 source/fun_sort/qsort.c
+source/fun_math/error.h
+source/fun_other/aes.c
+source/fun_other/error.h
+source/fun_other/list.c
+source/fun_other/list.h
+source/fun_other/timer.c
+source/fun_other/timer.h
+source/fun_other/trace.c
+source/fun_other/trace.h
