@@ -319,3 +319,5 @@ source/fun_ini/ini_2/inirw.c
 source/fun_ini/ini_2/inirw.h
 source/fun_ini/ini_2/Makefile
 source/fun_ini/ini_2/test.c
+source/fun_sort/qsort.h
+source/fun_sort/qsort.c
