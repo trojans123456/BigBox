@@ -553,3 +553,4 @@ source/fun_network/net.h
 source/fun_network/net_interface.c
 source/fun_network/net_interface.h
 source/fun_network/test.c
+source/fun_network/udev_test.c
