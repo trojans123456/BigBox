@@ -60,8 +60,8 @@ typedef struct at_client
     char *recv_buffer;
     uint32_t recv_buffer;
     uint32_t cur_recv_len;
-    at_sem_t rx_notice;
-    at_mutex_t lock;
+    sem_t rx_notice;
+    pthread_mutex_t lock;
     at_response_t resp;
     at_sem_t resp_notice;
     at_resp_status_e resp_status;
@@ -69,7 +69,7 @@ typedef struct at_client
     const at_urc_t *urc_table;
     uint32_t urc_table_size;
 
-    at_thread_t parser;
+    pthread_t parser;
 }at_client_t;
 
 /**
