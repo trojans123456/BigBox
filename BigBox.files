@@ -556,3 +556,6 @@ source/fun_network/test.c
 source/fun_network/udev_test.c
 source/fun_usb/usb_test.c
 source/fun_usb/udev_test.c
+source/fun_atcmd/atcmd.h
+source/fun_atcmd/sys_arch.h
+source/fun_atcmd/atcmd.c
