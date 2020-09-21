@@ -11,6 +11,8 @@ source/fun_algorithm/sha.h
 source/fun_algorithm/test.c
 source/fun_buffer/msg_buf.c
 source/fun_buffer/msg_buf.h
+source/fun_buffer/rt_ringbuffer.c
+source/fun_buffer/rt_ringbuffer.h
 source/fun_cstl/Makefile
 source/fun_cstl/Makefile
 source/fun_cstl/alloc_p.h
