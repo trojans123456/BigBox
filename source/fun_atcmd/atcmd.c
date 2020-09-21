@@ -1,6 +1,10 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
+
+#include <stdbool.h>
 
 #include "atcmd.h"
 
@@ -10,18 +14,376 @@
 #define AT_END_CR_LF                   "\r\n"
 
 #define AT_CLIENT_NUM_MAX   1
-static struct at_client at_client_table[AT_CLIENT_NUM_MAX] = {0};
+static struct at_client at_client_table[AT_CLIENT_NUM_MAX];
 
-at_response_t *at_create_resp(uint32_t buf_size, uint32_t line_num, uint32_t timeout)
+/* 在响应行缓冲区获取和解析响应缓冲区参数
+Get one line AT response buffer by line number*/
+const char *at_resp_get_line(at_response_t *resp, uint32_t resp_line)
+{
+    char *resp_buf = resp->buf;
+    char *resp_line_buf = NULL;
+    int line_num = 1;
+
+    if(!resp)   return NULL;
+
+    if (resp_line > resp->line_counts || resp_line <= 0)
+    {
+
+        return NULL;
+    }
+
+    for (line_num = 1; line_num <= resp->line_counts; line_num++)
+    {
+        if (resp_line == line_num)
+        {
+            resp_line_buf = resp_buf;
+
+            return resp_line_buf;
+        }
+
+        resp_buf += strlen(resp_buf) + 1;
+    }
+
+    return NULL;
+}
+const char *at_resp_get_line_by_kw(at_response_t *resp, const char *keyword)
+{
+    char *resp_buf = resp->buf;
+    char *resp_line_buf = NULL;
+    int line_num = 1;
+
+    if(!resp)   return NULL;
+    if(!keyword)    return NULL;
+
+    for (line_num = 1; line_num <= resp->line_counts; line_num++)
+    {
+        if (strstr(resp_buf, keyword))
+        {
+            resp_line_buf = resp_buf;
+
+            return resp_line_buf;
+        }
+
+        resp_buf += strlen(resp_buf) + 1;
+    }
+
+    return NULL;
+}
+int at_resp_parse_line_args(at_response_t *resp, uint32_t resp_line, const char *resp_expr, ...)
+{
+    va_list args;
+    int resp_args_num = 0;
+    const char *resp_line_buf = NULL;
+
+    if(!resp)   return -1;
+    if(!resp_expr)  return -1;
+
+    if ((resp_line_buf = at_resp_get_line(resp, resp_line)) == NULL)
+    {
+        return -1;
+    }
+
+    va_start(args, resp_expr);
+
+    resp_args_num = vsscanf(resp_line_buf, resp_expr, args);
+
+    va_end(args);
+
+    return resp_args_num;
+}
+
+int at_resp_parse_line_args_by_kw(at_response_t *resp, const char *keyword, const char *resp_expr, ...)
+{
+    va_list args;
+    int resp_args_num = 0;
+    const char *resp_line_buf = NULL;
+
+    if(!resp)   return -1;
+    if(resp_expr)    return -1;
+
+    if ((resp_line_buf = at_resp_get_line_by_kw(resp, keyword)) == NULL)
+    {
+        return -1;
+    }
+
+    va_start(args, resp_expr);
+
+    resp_args_num = vsscanf(resp_line_buf, resp_expr, args);
+
+    va_end(args);
+
+    return resp_args_num;
+}
+
+static const struct at_urc *get_urc_obj(at_client_t *client)
+{
+    uint32_t i,prefix_len,suffix_len;
+    uint32_t buf_sz;
+    char *buffer = NULL;
+
+    if(client->urc_table == NULL)
+    {
+        return NULL;
+    }
+
+    buffer = client->recv_buffer;
+    buf_sz = client->recv_bufsz;
+
+    for(i = 0;i < client->urc_table_size;i++)
+    {
+        prefix_len = strlen(client->urc_table[i].cmd_prefix);
+        suffix_len = strlen(client->urc_table[i].cmd_suffix);
+
+        if(buf_sz < prefix_len + suffix_len)
+        {
+            continue;
+        }
+        if ((prefix_len ? !strncmp(buffer, client->urc_table[i].cmd_prefix, prefix_len) : 1)
+                && (suffix_len ? !strncmp(buffer + buf_sz - suffix_len, client->urc_table[i].cmd_suffix, suffix_len) : 1))
+        {
+            return &client->urc_table[i];
+        }
+    }
+
+    return NULL;
+}
+
+static bool at_client_getchar(at_client_t *client,char *ch,int32_t timeout_ms)
+{
+    int result = true;
+    struct timespec tv;
+
+
+    while(read(client->fd,&ch,1) > 0)
+    {
+        if(timeout_ms <= 0)
+        {
+            result = sem_wait(&client->rx_notice);
+            if(result != 0)
+            {
+                return false;
+            }
+        }
+        else {
+            tv.tv_sec = timeout_ms / 1000;
+            tv.tv_nsec = (timeout_ms % 1000) * 1000000;
+            result = sem_timedwait(&client->rx_notice,&tv);
+            if(result != 0)
+            {
+                return false;
+            }
+        }
+
+
+    }
+    return true;
+}
+
+/**
+ * @brief read line
+ * @param client
+ * @return
+ */
+static int at_recv_readline(at_client_t *client)
+{
+    int32_t read_len = 0;
+    char ch = 0,last_ch = 0;
+    bool is_full = false;
+
+    memset(client->recv_buffer,0x00,client->recv_bufsz);
+    client->cur_recv_len = 0;
+
+    while(1)
+    {
+        at_client_getchar(client,&ch,0);
+        if(read_len < client->recv_bufsz)
+        {
+            client->recv_buffer[read_len++] = ch;
+            client->cur_recv_len = read_len;
+        }
+        else {
+            is_full = true;
+        }
+
+        /* is newline or urc data */
+        if((ch == '\n' && last_ch == '\r') || (client->end_sign != 0 && ch == client->end_sign)
+            || get_urc_obj(client))
+        {
+            if(is_full)
+            {
+                memset(client->recv_buffer, 0x00, client->recv_bufsz);
+                client->cur_recv_len = 0;
+                return -1;
+            }
+            break;
+        }
+        last_ch = ch;
+    }
+    return read_len;
+}
+
+
+void *client_parser(void *args)
+{
+    uint32_t  resp_buf_len = 0;
+    const struct at_urc *urc;
+    uint8_t line_counts = 0;
+
+    at_client_t *client = (at_client_t *)args;
+    if(!client)
+        return NULL;
+
+    while(1)
+    {
+        if(at_recv_readline(client) > 0)
+        {
+            if((urc = get_urc_obj(client)) != NULL)
+            {
+                if(urc->func != NULL)
+                {
+                    urc->func(client->recv_buffer,client->recv_bufsz);
+                }
+            }
+            else if(client->resp != NULL)
+            {
+                client->recv_buffer[client->cur_recv_len - 1] = '\0';
+                if(resp_buf_len + client->cur_recv_len < client->resp->buf_size)
+                {
+                    /* copy response lines*/
+                    memcpy(client->resp->buf + resp_buf_len,client->recv_buffer,client->cur_recv_len);
+                    resp_buf_len += client->cur_recv_len;
+
+                    line_counts++;
+                }
+                else {
+                    client->resp_status = AT_RESP_BUFF_FULL;
+                }
+
+                /* check response result */
+                if (memcmp(client->recv_buffer, AT_RESP_END_OK, strlen(AT_RESP_END_OK)) == 0
+                        && client->resp->line_num == 0)
+                {
+                    /* get the end data by response result, return response state END_OK. */
+                    client->resp_status = AT_RESP_OK;
+                }
+                else if (strstr(client->recv_buffer, AT_RESP_END_ERROR)
+                         || (memcmp(client->recv_buffer, AT_RESP_END_FAIL, strlen(AT_RESP_END_FAIL)) == 0))
+                {
+                    client->resp_status = AT_RESP_ERROR;
+                }
+                else if (line_counts == client->resp->line_num && client->resp->line_num)
+                {
+                    /* get the end data by response line, return response state END_OK.*/
+                    client->resp_status = AT_RESP_OK;
+                }
+                else
+                {
+                    continue;
+                }
+                client->resp->line_counts = line_counts;
+
+                client->resp = NULL;
+                sem_post(&client->resp_notice);
+                resp_buf_len = 0, line_counts = 0;
+            }
+        }
+    }
+}
+
+static int at_client_para_init(at_client_t *client)
+{
+    int ret = 0;
+    client->status = AT_STATUS_UNINIT;
+    client->cur_recv_len = 0;
+    client->recv_buffer = (char *)calloc(1,sizeof(client->recv_bufsz));
+    if(!client->recv_buffer)
+    {
+        return -1;
+    }
+
+    /* lock */
+    pthread_mutex_init(&client->lock,NULL);
+    /*sempore*/
+    sem_init(&client->rx_notice,0,0);/* 0 pthread */
+    sem_init(&client->resp_notice,0,0);
+
+    client->urc_table = NULL;
+    client->urc_table_size = 0;
+
+    ret = pthread_create(&client->parser,NULL,client_parser,client);
+    if(ret < 0)
+    {
+        sem_destroy(&client->resp_notice);
+        sem_destroy(&client->rx_notice);
+        pthread_mutex_destroy(&client->lock);
+        free(client->recv_buffer);
+        return -1;
+    }
+    return 0;
+}
+
+int at_client_init(const char *dev_name,uint32_t recv_bufsz)
+{
+   int idx = 0;
+
+   at_client_t *client = NULL;
+
+   for(idx = 0;idx < AT_CLIENT_NUM_MAX && at_client_table[idx].dev_name;idx++)
+   {
+       if(strcmp(at_client_table[idx].dev_name,dev_name) == 0)
+       {
+           break;
+       }
+   }
+
+   if(idx >= AT_CLIENT_NUM_MAX)
+   {
+       return -1;
+   }
+
+    client = &at_client_table[idx];
+    client->recv_bufsz = recv_bufsz;
+    client->dev_name = strdup(dev_name);
+    /* open device */
+
+    return at_client_para_init(client);
+}
+
+at_client_t *at_client_get(const char *dev_name)
+{
+    int idx = 0;
+
+    for(idx = 0;idx < AT_CLIENT_NUM_MAX;idx++)
+    {
+        if(strcmp(at_client_table[idx].dev_name,dev_name) == 0)
+        {
+            return &at_client_table[idx];
+        }
+    }
+    return NULL;
+}
+
+at_client_t *at_client_get_first(void)
+{
+    if(strcmp(at_client_table[0].dev_name,"") == 0)
+    {
+        return NULL;
+    }
+    return &at_client_table[0];
+}
+
+at_response_t *at_create_resp(uint32_t buf_size, uint8_t line_num, uint32_t timeout)
 {
     at_response_t *resp = NULL;
 
-    resp = (at_response_t *)calloc(1,sizeof(at_response_t));
-    if(!resp)
+    resp = (at_response_t *) calloc(1, sizeof(struct at_response));
+    if (resp == NULL)
+    {
         return NULL;
+    }
 
-    resp->buf = (char *)calloc(1,buf_size);
-    if(!resp)
+    resp->buf = (char *) calloc(1, buf_size);
+    if (resp->buf == NULL)
     {
         free(resp);
         return NULL;
@@ -37,169 +399,165 @@ at_response_t *at_create_resp(uint32_t buf_size, uint32_t line_num, uint32_t tim
 
 void at_delete_resp(at_response_t *resp)
 {
-    if(resp && resp->buf)
+    if (resp && resp->buf)
     {
         free(resp->buf);
+    }
 
+    if (resp)
+    {
         free(resp);
         resp = NULL;
     }
 }
 
-at_response_t *at_resp_set_info(at_response_t *resp, uint32_t buf_size, uint32_t line_num, uint32_t timeout)
+int at_client_obj_wait_connect(at_client_t *client,uint32_t timeout)
 {
+    int32_t result = 0;
+    at_response_t *resp = NULL;
+    time_t start_time = 0;
+
+    if(client == NULL)
+        return -1;
+
+    resp = at_create_resp(16,0,500);
     if(!resp)
-        return NULL;
-
-    if(resp->buf_size != buf_size)
-    {
-        resp->buf_size = buf_size;
-        resp->buf = (char *)realloc(resp->buf,buf_size);
-        if(!resp->buf)
-        {
-            return NULL;
-        }
-    }
-
-    resp->line_num = line_num;
-    resp->timeout = timeout;
-
-    return resp;
-}
-
-const char *at_resp_get_line(at_response_t *resp, uint32_t resp_line)
-{
-    char *resp_buf = resp->buf;
-    char *resp_line_buf = NULL;
-    uint32_t line_num = 1;
-
-    if(!resp)
-        return NULL;
-
-    if(resp_line > resp->line_counts || resp_line <= 0)
-    {
-        return NULL;
-    }
-
-    for(line_num = 1;line_num <= resp->line_counts;line_num++)
-    {
-        if (resp_line == line_num)
-        {
-            resp_line_buf = resp_buf;
-
-            return resp_line_buf;
-        }
-
-        resp_buf += strlen(resp_buf) + 1;
-    }
-
-    return NULL;
-}
-
-const char *at_resp_get_line_by_kw(at_response_t *resp, const char *keyword)
-{
-    char *resp_buf = resp->buf;
-    char *resp_line_buf = NULL;
-    uint32_t line_num = 1;
-
-    if(!resp || !keyword)
-        return NULL;
-
-    for(line_num = 1;line_num <= resp->line_counts;line_num++)
-    {
-        if(strstr(resp_buf,keyword))
-        {
-            resp_line_buf = resp_buf;
-            return resp_line_buf;
-        }
-        resp_buf += strlen(resp_buf) + 1;
-    }
-    return NULL;
-}
-
-int at_resp_parse_line_args(at_response_t *resp, uint32_t resp_line, const char *resp_expr)
-{
-    va_list args;
-    int resp_args_num = 0;
-    const char *resp_line_buf = NULL;
-
-    if(!resp || !resp_expr)
-        return NULL;
-
-    if((resp_line_buf = at_resp_get_line(resp,resp_line)) = NULL)
     {
         return -1;
     }
 
-    va_start(args,resp_expr);
+    pthread_mutex_lock(&client->lock);
+    client->resp = resp;
+    start_time = time(NULL);
 
-    resp_args_num = vsscanf(resp_line_buf,resp_expr,args);
+    struct timespec tv;
+    tv.tv_sec = resp->timeout / 1000;
+    tv.tv_nsec = (resp->timeout % 1000) * 1000000;
 
-    va_end(args);
-
-    return resp_args_num;
-}
-
-int at_resp_parse_line_args_by_kw(at_response_t *resp, const char *keyword, const char *resp_expr)
-{
-    va_list args;
-    int resp_args_num = 0;
-    const char *resp_line_buf = NULL;
-
-    if(!resp || !resp_expr)
-        return NULL;
-
-    if((resp_line_buf = at_resp_get_line_by_kw(resp,keyword)) == NULL)
+    while(1)
     {
-        return -1;
+        if(time(NULL) - start_time > timeout)
+        {
+            result = -1;
+            break;
+        }
+
+        resp->line_counts = 0;
+        write(client->fd,"AT\r\n",4);
+        if(sem_timedwait(&client->resp_notice,&tv) != 0)
+            continue;
+        else {
+            break;
+        }
     }
 
-    va_start(args,resp_expr);
-    resp_args_num = vsscanf(resp_line_buf,resp_expr,args);
-    va_end(args);
+    at_delete_resp(resp);
+    client->resp = NULL;
 
-    return resp_args_num;
+    pthread_mutex_unlock(&client->lock);
+    return result;
 }
 
+int at_client_obj_send(at_client_t *client,const char *buf,uint32_t size)
+{
+    if(!client || size == 0)
+        return -1;
 
-int at_obj_exec_cmd(at_client_t *client, at_response_t resp, const char *cmd_expr, ...)
+    return write(client->fd,buf,size);
+}
+
+int at_client_obj_recv(at_client_t *client,char *buf, uint32_t size, int timeout)
+{
+    int read_idx = 0;
+    bool result = 0;
+    char ch;
+
+    if(!client || !buf)
+        return -1;
+
+    while(1)
+    {
+        if(read_idx < size)
+        {
+            result = at_client_getchar(client,&ch,timeout);
+            if(result == false)
+            {
+                return -1;
+            }
+            buf[read_idx++] = ch;
+        }
+        else {
+            break;
+        }
+    }
+    return read_idx;
+}
+
+void at_obj_set_end_sign(at_client_t *client,char ch)
+{
+    if(client)
+    {
+        client->end_sign = ch;
+    }
+}
+
+void at_obj_set_urc_table(at_client_t *client,const at_urc_t *table,uint32_t table_sz)
+{
+    int idx;
+    if(!client)
+        return ;
+
+    for(idx = 0;idx < table_sz;idx++)
+    {
+        if(table[idx].cmd_prefix == NULL ||
+                table[idx].cmd_suffix == NULL)
+            break;
+    }
+
+    client->urc_table = table;
+    client->urc_table_size = table_sz;
+}
+
+int at_obj_exec_cmd(at_client_t *client,at_response_t *resp, const char *cmd_expr, ...)
 {
     va_list args;
-    uint32_t cmd_size = 0;
-    uint32_t result = 0;
+    int cmd_size = 0;
+    int result = 0;
     const char *cmd = NULL;
+    char send_buff[256] = "";
 
-    if(!client || !cmd_expr)   return -1;
+    if(!cmd_expr)   return -1;
 
-
-    /* check AT CLI mode */
-    if (client->status == AT_STATUS_BUSY && resp)
+    if (client == NULL)
     {
+
         return -1;
     }
 
-    at_mutex_take(client->lock, -1);
+    pthread_mutex_lock(&client->lock);
 
     client->resp_status = AT_RESP_OK;
     client->resp = resp;
 
-    if (resp != NULL)
-    {
-        resp->buf_len = 0;
-        resp->line_counts = 0;
-    }
-
-    char send_buf[256] = "";
     va_start(args, cmd_expr);
-    int len = vsprintf(send_buf,cmd_expr, args);
+    int len = vsprintf(send_buff, cmd_expr, args);
     va_end(args);
 
-    send_buf[len] = '\r';
-    send_buf[len + 1] = '\n';
+    send_buff[len] = '\r';
+    send_buff[len + 1] = '\n';
+
+    write(client->fd,send_buff,len + 2);
+
+
+    struct timespec tv;
+    tv.tv_sec = resp->timeout / 1000;
+    tv.tv_nsec = (resp->timeout % 1000) * 1000000;
 
     if (resp != NULL)
     {
-        if (at_sem_take(client->resp_notice, resp->timeout) != RT_EOK)
+        resp->line_counts = 0;
+        /*信号量等待超时*/
+        if (sem_timedwait(&client->resp_notice, &tv) != 0)
         {
 
             client->resp_status = AT_RESP_TIMEOUT;
@@ -217,640 +575,30 @@ int at_obj_exec_cmd(at_client_t *client, at_response_t resp, const char *cmd_exp
 __exit:
     client->resp = NULL;
 
-    at_mutex_release(client->lock);
+    pthread_mutex_unlock(&client->lock);
 
     return result;
 }
 
-/**
- * Waiting for connection to external devices.
- *
- * @param client current AT client object
- * @param timeout millisecond for timeout
- *
- * @return 0 : success
- *        -2 : timeout
- *        -5 : no memory
- */
-int at_client_obj_wait_connect(at_client_t *client, rt_uint32_t timeout)
+
+at_response_t *at_resp_set_info(at_response_t *resp, uint32_t buf_size, uint8_t line_num, uint32_t timeout)
 {
-    uint32_t result = 0;
-    at_response_t resp = RT_NULL;
-    uint32_t start_time = 0;
+    if(!resp)   return NULL;
 
-
-    resp = at_create_resp(64, 0, 300);
-    if (resp == NULL)
+    if (resp->buf_size != buf_size)
     {
-        return -1;
-    }
+        resp->buf_size = buf_size;
 
-    at_mutex_take(client->lock, -1);
-    client->resp = resp;
-
-    start_time = rt_tick_get();
-
-    while (1)
-    {
-        /* Check whether it is timeout */
-        if (rt_tick_get() - start_time > rt_tick_from_millisecond(timeout))
+        resp->buf = (char *) realloc(resp->buf, buf_size);
+        if (!resp->buf)
         {
-            LOG_E("wait AT client(%s) connect timeout(%d tick).", client_name, timeout);
-            result = -RT_ETIMEOUT;
-            break;
+
+            return NULL;
         }
-
-        /* Check whether it is already connected */
-        resp->buf_len = 0;
-        resp->line_counts = 0;
-        rt_device_write(client->device, 0, "AT\r\n", 4);
-
-        if (rt_sem_take(client->resp_notice, resp->timeout) != RT_EOK)
-            continue;
-        else
-            break;
     }
 
-    at_delete_resp(resp);
+    resp->line_num = line_num;
+    resp->timeout = timeout;
 
-    client->resp = RT_NULL;
-
-    rt_mutex_release(client->lock);
-
-    return result;
+    return resp;
 }
-
-/**
- * Send data to AT server, send data don't have end sign(eg: \r\n).
- *
- * @param client current AT client object
- * @param buf   send data buffer
- * @param size  send fixed data size
- *
- * @return >0: send data size
- *         =0: send failed
- */
-rt_size_t at_client_obj_send(at_client_t client, const char *buf, rt_size_t size)
-{
-    RT_ASSERT(buf);
-
-    if (client == RT_NULL)
-    {
-        LOG_E("input AT Client object is NULL, please create or get AT Client object!");
-        return 0;
-    }
-
-#ifdef AT_PRINT_RAW_CMD
-    at_print_raw_cmd("sendline", buf, size);
-#endif
-
-    return rt_device_write(client->device, 0, buf, size);
-}
-
-static rt_err_t at_client_getchar(at_client_t client, char *ch, rt_int32_t timeout)
-{
-    rt_err_t result = RT_EOK;
-
-    while (rt_device_read(client->device, 0, ch, 1) == 0)
-    {
-        rt_sem_control(client->rx_notice, RT_IPC_CMD_RESET, RT_NULL);
-
-        result = rt_sem_take(client->rx_notice, rt_tick_from_millisecond(timeout));
-        if (result != RT_EOK)
-        {
-            return result;
-        }
-    }
-
-    return RT_EOK;
-}
-
-/**
- * AT client receive fixed-length data.
- *
- * @param client current AT client object
- * @param buf   receive data buffer
- * @param size  receive fixed data size
- * @param timeout  receive data timeout (ms)
- *
- * @note this function can only be used in execution function of URC data
- *
- * @return >0: receive data size
- *         =0: receive failed
- */
-rt_size_t at_client_obj_recv(at_client_t client, char *buf, rt_size_t size, rt_int32_t timeout)
-{
-    rt_size_t read_idx = 0;
-    rt_err_t result = RT_EOK;
-    char ch;
-
-    RT_ASSERT(buf);
-
-    if (client == RT_NULL)
-    {
-        LOG_E("input AT Client object is NULL, please create or get AT Client object!");
-        return 0;
-    }
-
-    while (1)
-    {
-        if (read_idx < size)
-        {
-            result = at_client_getchar(client, &ch, timeout);
-            if (result != RT_EOK)
-            {
-                LOG_E("AT Client receive failed, uart device get data error(%d)", result);
-                return 0;
-            }
-
-            buf[read_idx++] = ch;
-        }
-        else
-        {
-            break;
-        }
-    }
-
-#ifdef AT_PRINT_RAW_CMD
-    at_print_raw_cmd("urc_recv", buf, size);
-#endif
-
-    return read_idx;
-}
-
-/**
- *  AT client set end sign.
- *
- * @param client current AT client object
- * @param ch the end sign, can not be used when it is '\0'
- */
-void at_obj_set_end_sign(at_client_t client, char ch)
-{
-    if (client == RT_NULL)
-    {
-        LOG_E("input AT Client object is NULL, please create or get AT Client object!");
-        return;
-    }
-
-    client->end_sign = ch;
-}
-
-/**
- * set URC(Unsolicited Result Code) table
- *
- * @param client current AT client object
- * @param table URC table
- * @param size table size
- */
-int at_obj_set_urc_table(at_client_t client, const struct at_urc *urc_table, rt_size_t table_sz)
-{
-    rt_size_t idx;
-
-    if (client == RT_NULL)
-    {
-        LOG_E("input AT Client object is NULL, please create or get AT Client object!");
-        return -RT_ERROR;
-    }
-
-    for (idx = 0; idx < table_sz; idx++)
-    {
-        RT_ASSERT(urc_table[idx].cmd_prefix);
-        RT_ASSERT(urc_table[idx].cmd_suffix);
-    }
-
-    if (client->urc_table_size == 0)
-    {
-        client->urc_table = (struct at_urc_table *) rt_calloc(1, sizeof(struct at_urc_table));
-        if (client->urc_table == RT_NULL)
-        {
-            return -RT_ENOMEM;
-        }
-
-        client->urc_table[0].urc = urc_table;
-        client->urc_table[0].urc_size = table_sz;
-        client->urc_table_size++;
-    }
-    else
-    {
-        struct at_urc_table *old_urc_table = RT_NULL;
-        size_t old_table_size = client->urc_table_size * sizeof(struct at_urc_table);
-
-        old_urc_table = (struct at_urc_table *) rt_malloc(old_table_size);
-        if (old_urc_table == RT_NULL)
-        {
-            return -RT_ENOMEM;
-        }
-        rt_memcpy(old_urc_table, client->urc_table, old_table_size);
-
-        /* realloc urc table space */
-        client->urc_table = (struct at_urc_table *) rt_realloc(client->urc_table,
-                old_table_size + sizeof(struct at_urc_table));
-        if (client->urc_table == RT_NULL)
-        {
-            rt_free(old_urc_table);
-            return -RT_ENOMEM;
-        }
-        rt_memcpy(client->urc_table, old_urc_table, old_table_size);
-        client->urc_table[client->urc_table_size].urc = urc_table;
-        client->urc_table[client->urc_table_size].urc_size = table_sz;
-        client->urc_table_size++;
-
-        rt_free(old_urc_table);
-    }
-
-    return RT_EOK;
-}
-
-/**
- * get AT client object by AT device name.
- *
- * @dev_name AT client device name
- *
- * @return AT client object
- */
-at_client_t at_client_get(const char *dev_name)
-{
-    int idx = 0;
-
-    RT_ASSERT(dev_name);
-
-    for (idx = 0; idx < AT_CLIENT_NUM_MAX; idx++)
-    {
-        if (rt_strcmp(at_client_table[idx].device->parent.name, dev_name) == 0)
-        {
-            return &at_client_table[idx];
-        }
-    }
-
-    return RT_NULL;
-}
-
-/**
- * get first AT client object in the table.
- *
- * @return AT client object
- */
-at_client_t at_client_get_first(void)
-{
-    if (at_client_table[0].device == RT_NULL)
-    {
-        return RT_NULL;
-    }
-
-    return &at_client_table[0];
-}
-
-static const struct at_urc *get_urc_obj(at_client_t client)
-{
-    rt_size_t i, j, prefix_len, suffix_len;
-    rt_size_t bufsz;
-    char *buffer = RT_NULL;
-    const struct at_urc *urc = RT_NULL;
-    struct at_urc_table *urc_table = RT_NULL;
-
-    if (client->urc_table == RT_NULL)
-    {
-        return RT_NULL;
-    }
-
-    buffer = client->recv_line_buf;
-    bufsz = client->recv_line_len;
-
-    for (i = 0; i < client->urc_table_size; i++)
-    {
-        for (j = 0; j < client->urc_table[i].urc_size; j++)
-        {
-            urc_table = client->urc_table + i;
-            urc = urc_table->urc + j;
-
-            prefix_len = rt_strlen(urc->cmd_prefix);
-            suffix_len = rt_strlen(urc->cmd_suffix);
-            if (bufsz < prefix_len + suffix_len)
-            {
-                continue;
-            }
-            if ((prefix_len ? !rt_strncmp(buffer, urc->cmd_prefix, prefix_len) : 1)
-                    && (suffix_len ? !rt_strncmp(buffer + bufsz - suffix_len, urc->cmd_suffix, suffix_len) : 1))
-            {
-                return urc;
-            }
-        }
-    }
-
-    return RT_NULL;
-}
-
-static int at_recv_readline(at_client_t client)
-{
-    rt_size_t read_len = 0;
-    char ch = 0, last_ch = 0;
-    rt_bool_t is_full = RT_FALSE;
-
-    rt_memset(client->recv_line_buf, 0x00, client->recv_bufsz);
-    client->recv_line_len = 0;
-
-    while (1)
-    {
-        at_client_getchar(client, &ch, RT_WAITING_FOREVER);
-
-        if (read_len < client->recv_bufsz)
-        {
-            client->recv_line_buf[read_len++] = ch;
-            client->recv_line_len = read_len;
-        }
-        else
-        {
-            is_full = RT_TRUE;
-        }
-
-        /* is newline or URC data */
-        if ((ch == '\n' && last_ch == '\r') || (client->end_sign != 0 && ch == client->end_sign)
-                || get_urc_obj(client))
-        {
-            if (is_full)
-            {
-                LOG_E("read line failed. The line data length is out of buffer size(%d)!", client->recv_bufsz);
-                rt_memset(client->recv_line_buf, 0x00, client->recv_bufsz);
-                client->recv_line_len = 0;
-                return -RT_EFULL;
-            }
-            break;
-        }
-        last_ch = ch;
-    }
-
-#ifdef AT_PRINT_RAW_CMD
-    at_print_raw_cmd("recvline", client->recv_line_buf, read_len);
-#endif
-
-    return read_len;
-}
-
-static void client_parser(at_client_t client)
-{
-    const struct at_urc *urc;
-
-    while(1)
-    {
-        if (at_recv_readline(client) > 0)
-        {
-            if ((urc = get_urc_obj(client)) != RT_NULL)
-            {
-                /* current receive is request, try to execute related operations */
-                if (urc->func != RT_NULL)
-                {
-                    urc->func(client, client->recv_line_buf, client->recv_line_len);
-                }
-            }
-            else if (client->resp != RT_NULL)
-            {
-                at_response_t resp = client->resp;
-
-                /* current receive is response */
-                client->recv_line_buf[client->recv_line_len - 1] = '\0';
-                if (resp->buf_len + client->recv_line_len < resp->buf_size)
-                {
-                    /* copy response lines, separated by '\0' */
-                    rt_memcpy(resp->buf + resp->buf_len, client->recv_line_buf, client->recv_line_len);
-
-                    /* update the current response information */
-                    resp->buf_len += client->recv_line_len;
-                    resp->line_counts++;
-                }
-                else
-                {
-                    client->resp_status = AT_RESP_BUFF_FULL;
-                    LOG_E("Read response buffer failed. The Response buffer size is out of buffer size(%d)!", resp->buf_size);
-                }
-                /* check response result */
-                if (rt_memcmp(client->recv_line_buf, AT_RESP_END_OK, rt_strlen(AT_RESP_END_OK)) == 0
-                        && resp->line_num == 0)
-                {
-                    /* get the end data by response result, return response state END_OK. */
-                    client->resp_status = AT_RESP_OK;
-                }
-                else if (rt_strstr(client->recv_line_buf, AT_RESP_END_ERROR)
-                        || (rt_memcmp(client->recv_line_buf, AT_RESP_END_FAIL, rt_strlen(AT_RESP_END_FAIL)) == 0))
-                {
-                    client->resp_status = AT_RESP_ERROR;
-                }
-                else if (resp->line_counts == resp->line_num && resp->line_num)
-                {
-                    /* get the end data by response line, return response state END_OK.*/
-                    client->resp_status = AT_RESP_OK;
-                }
-                else
-                {
-                    continue;
-                }
-
-                client->resp = RT_NULL;
-                rt_sem_release(client->resp_notice);
-            }
-            else
-            {
-//                log_d("unrecognized line: %.*s", client->recv_line_len, client->recv_line_buf);
-            }
-        }
-    }
-}
-
-static rt_err_t at_client_rx_ind(rt_device_t dev, rt_size_t size)
-{
-    int idx = 0;
-
-    for (idx = 0; idx < AT_CLIENT_NUM_MAX; idx++)
-    {
-        if (at_client_table[idx].device == dev && size > 0)
-        {
-            rt_sem_release(at_client_table[idx].rx_notice);
-        }
-    }
-
-    return RT_EOK;
-}
-
-/* initialize the client object parameters */
-static int at_client_para_init(at_client_t client)
-{
-#define AT_CLIENT_LOCK_NAME            "at_c"
-#define AT_CLIENT_SEM_NAME             "at_cs"
-#define AT_CLIENT_RESP_NAME            "at_cr"
-#define AT_CLIENT_THREAD_NAME          "at_clnt"
-
-    int result = RT_EOK;
-    static int at_client_num = 0;
-    char name[RT_NAME_MAX];
-
-    client->status = AT_STATUS_UNINITIALIZED;
-
-    client->recv_line_len = 0;
-    client->recv_line_buf = (char *) rt_calloc(1, client->recv_bufsz);
-    if (client->recv_line_buf == RT_NULL)
-    {
-        LOG_E("AT client initialize failed! No memory for receive buffer.");
-        result = -RT_ENOMEM;
-        goto __exit;
-    }
-
-    rt_snprintf(name, RT_NAME_MAX, "%s%d", AT_CLIENT_LOCK_NAME, at_client_num);
-    client->lock = rt_mutex_create(name, RT_IPC_FLAG_FIFO);
-    if (client->lock == RT_NULL)
-    {
-        LOG_E("AT client initialize failed! at_client_recv_lock create failed!");
-        result = -RT_ENOMEM;
-        goto __exit;
-    }
-
-    rt_snprintf(name, RT_NAME_MAX, "%s%d", AT_CLIENT_SEM_NAME, at_client_num);
-    client->rx_notice = rt_sem_create(name, 0, RT_IPC_FLAG_FIFO);
-    if (client->rx_notice == RT_NULL)
-    {
-        LOG_E("AT client initialize failed! at_client_notice semaphore create failed!");
-        result = -RT_ENOMEM;
-        goto __exit;
-    }
-
-    rt_snprintf(name, RT_NAME_MAX, "%s%d", AT_CLIENT_RESP_NAME, at_client_num);
-    client->resp_notice = rt_sem_create(name, 0, RT_IPC_FLAG_FIFO);
-    if (client->resp_notice == RT_NULL)
-    {
-        LOG_E("AT client initialize failed! at_client_resp semaphore create failed!");
-        result = -RT_ENOMEM;
-        goto __exit;
-    }
-
-    client->urc_table = RT_NULL;
-    client->urc_table_size = 0;
-
-    rt_snprintf(name, RT_NAME_MAX, "%s%d", AT_CLIENT_THREAD_NAME, at_client_num);
-    client->parser = rt_thread_create(name,
-                                     (void (*)(void *parameter))client_parser,
-                                     client,
-                                     1024 + 512,
-                                     RT_THREAD_PRIORITY_MAX / 3 - 1,
-                                     5);
-    if (client->parser == RT_NULL)
-    {
-        result = -RT_ENOMEM;
-        goto __exit;
-    }
-
-__exit:
-    if (result != RT_EOK)
-    {
-        if (client->lock)
-        {
-            rt_mutex_delete(client->lock);
-        }
-
-        if (client->rx_notice)
-        {
-            rt_sem_delete(client->rx_notice);
-        }
-
-        if (client->resp_notice)
-        {
-            rt_sem_delete(client->resp_notice);
-        }
-
-        if (client->device)
-        {
-            rt_device_close(client->device);
-        }
-
-        if (client->recv_line_buf)
-        {
-            rt_free(client->recv_line_buf);
-        }
-
-        rt_memset(client, 0x00, sizeof(struct at_client));
-    }
-    else
-    {
-        at_client_num++;
-    }
-
-    return result;
-}
-
-/**
- * AT client initialize.
- *
- * @param dev_name AT client device name
- * @param recv_bufsz the maximum number of receive buffer length
- *
- * @return 0 : initialize success
- *        -1 : initialize failed
- *        -5 : no memory
- */
-int at_client_init(const char *dev_name,  rt_size_t recv_bufsz)
-{
-    int idx = 0;
-    int result = RT_EOK;
-    rt_err_t open_result = RT_EOK;
-    at_client_t client = RT_NULL;
-
-    RT_ASSERT(dev_name);
-    RT_ASSERT(recv_bufsz > 0);
-
-    for (idx = 0; idx < AT_CLIENT_NUM_MAX && at_client_table[idx].device; idx++);
-
-    if (idx >= AT_CLIENT_NUM_MAX)
-    {
-        LOG_E("AT client initialize failed! Check the maximum number(%d) of AT client.", AT_CLIENT_NUM_MAX);
-        result = -RT_EFULL;
-        goto __exit;
-    }
-
-    client = &at_client_table[idx];
-    client->recv_bufsz = recv_bufsz;
-
-    result = at_client_para_init(client);
-    if (result != RT_EOK)
-    {
-        goto __exit;
-    }
-
-    /* find and open command device */
-    client->device = rt_device_find(dev_name);
-    if (client->device)
-    {
-        RT_ASSERT(client->device->type == RT_Device_Class_Char);
-
-        /* using DMA mode first */
-        open_result = rt_device_open(client->device, RT_DEVICE_OFLAG_RDWR | RT_DEVICE_FLAG_DMA_RX);
-        /* using interrupt mode when DMA mode not supported */
-        if (open_result == -RT_EIO)
-        {
-            open_result = rt_device_open(client->device, RT_DEVICE_OFLAG_RDWR | RT_DEVICE_FLAG_INT_RX);
-        }
-        RT_ASSERT(open_result == RT_EOK);
-
-        rt_device_set_rx_indicate(client->device, at_client_rx_ind);
-    }
-    else
-    {
-        LOG_E("AT client initialize failed! Not find the device(%s).", dev_name);
-        result = -RT_ERROR;
-        goto __exit;
-    }
-
-__exit:
-    if (result == RT_EOK)
-    {
-        client->status = AT_STATUS_INITIALIZED;
-
-        rt_thread_startup(client->parser);
-
-        LOG_I("AT client(V%s) on device %s initialize success.", AT_SW_VERSION, dev_name);
-    }
-    else
-    {
-        LOG_E("AT client(V%s) on device %s initialize failed(%d).", AT_SW_VERSION, dev_name, result);
-    }
-
-    return result;
-}
-#endif /* AT_USING_CLIENT */
-

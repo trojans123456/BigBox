@@ -2,11 +2,18 @@
 #define __ATCMD_H
 
 #include <stdint.h>
+#include <stdarg.h>
+
+#ifdef __linux__
+#include <pthread.h>
+#include <semaphore.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define AT_CMD_END_MARK_CRLF
 
 #if defined(AT_CMD_END_MARK_CRLF)
 #define AT_CMD_END_MARK             "\r\n"
@@ -58,17 +65,18 @@ typedef struct at_client
     at_status_e status;
     char end_sign;
     char *recv_buffer;
-    uint32_t recv_buffer;
+    uint32_t recv_bufsz;
     uint32_t cur_recv_len;
     sem_t rx_notice;
     pthread_mutex_t lock;
-    at_response_t resp;
-    at_sem_t resp_notice;
+    at_response_t *resp;
+    sem_t resp_notice;
     at_resp_status_e resp_status;
 
     const at_urc_t *urc_table;
     uint32_t urc_table_size;
-
+    const char *dev_name;
+    int fd;
     pthread_t parser;
 }at_client_t;
 
@@ -92,13 +100,13 @@ at_client_t *at_client_get_first(void);
  */
 int at_client_obj_wait_connect(at_client_t *client,uint32_t timeout);
 
-int at_client_obj_send(at_clien_t *client,const char *buf,uint32_t size);
+int at_client_obj_send(at_client_t *client,const char *buf,uint32_t size);
 
 int at_client_obj_recv(at_client_t *client,char *buf, uint32_t size, int timeout);
 
 void at_obj_set_end_sign(at_client_t *client,char ch);
 
-void at_obj_set_urc_table(at_client_t *client,const at_urc_t *table,uint32_t size);
+void at_obj_set_urc_table(at_client_t *client, const at_urc_t *table, uint32_t table_sz);
 
 /**
  * @brief 发送AT指令
@@ -107,7 +115,7 @@ void at_obj_set_urc_table(at_client_t *client,const at_urc_t *table,uint32_t siz
  * @param cmd_expr
  * @return
  */
-int at_obj_exec_cmd(at_client_t *client,at_response_t resp, const char *cmd_expr, ...);
+int at_obj_exec_cmd(at_client_t *client, at_response_t *resp, const char *cmd_expr, ...);
 
 
 /**
@@ -117,13 +125,13 @@ int at_obj_exec_cmd(at_client_t *client,at_response_t resp, const char *cmd_expr
  * @param timeout
  * @return
  */
-at_response_t *at_create_resp(uint32_t buf_size, uint32_t line_num, uint32_t timeout);
+at_response_t *at_create_resp(uint32_t buf_size, uint8_t line_num, uint32_t timeout);
 
 
 void at_delete_resp(at_response_t *resp);
 
 
-at_response_t at_resp_set_info(at_response_t *resp, uint32_t buf_size, uint32_t line_num, uint32_t timeout);
+at_response_t *at_resp_set_info(at_response_t *resp, uint32_t buf_size, uint8_t line_num, uint32_t timeout);
 
 /* 在响应行缓冲区获取和解析响应缓冲区参数 */
 const char *at_resp_get_line(at_response_t *resp, uint32_t resp_line);
