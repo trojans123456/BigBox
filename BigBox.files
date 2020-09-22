@@ -560,3 +560,4 @@ source/fun_usb/usb_test.c
 source/fun_usb/udev_test.c
 source/fun_atcmd/atcmd.h
 source/fun_atcmd/atcmd.c
+source/fun_getopts/test.c

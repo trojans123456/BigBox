@@ -84,3 +84,4 @@ source/fun_network/net_protocol/net_headers/usr/include/linux
 source/fun_network/3rdlib/examples++
 source/fun_usb
 source/fun_atcmd
+source/fun_getopts
