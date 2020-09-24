@@ -1,0 +1,19 @@
+#
+# Generated files
+#
+*.moc
+*conf-cfg
+*.o
+*.cmd
+*.tmp
+lexer.lex.c
+parser.tab.*
+
+#
+# configuration programs
+#
+conf
+mconf
+nconf
+qconf
+gconf
