@@ -1,9 +1,4 @@
-/*
- * kthread.c
- *
- *  Created on: Oct 11, 2020
- *      Author: hongtao
- */
+
 
 #include <linux/kthread.h>
 #include <linux/module.h>
