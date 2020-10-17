@@ -72,6 +72,7 @@ source/fun_event/event.h
 source/fun_event/event.h
 source/fun_event/poll.c
 source/fun_event/select.c
+source/fun_ipc/example.c
 source/fun_ipc/ipc_msgbuf.c
 source/fun_ipc/ipc_sem.c
 source/fun_ipc/ipc_shm.c

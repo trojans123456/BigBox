@@ -42,7 +42,7 @@
 */
 
 
-/**** posix 信号量 ***/
+/**** posix 信号量  基于 同步原语 ***/
 #include <semaphore.h>
 
 /**
