@@ -1,0 +1,8 @@
+
+/ {
+	
+	buzzer {
+		compatible = "am335x_buzzer";
+		gpios = <&gpio3 17 0>;
+	};
+};

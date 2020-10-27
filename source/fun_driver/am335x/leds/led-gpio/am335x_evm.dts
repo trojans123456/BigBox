@@ -1,0 +1,29 @@
+
+/*
+*根据linux自带 leds-gpio.c 实现led的控制 cat /sys/class/leds/xxx
+*/
+/ {
+
+    leds {
+        pinctrl-names = "default";
+        pinctrl-0 = <&leds_pins_default>;
+        compatible = "gpio-leds";
+
+        led@1{
+            label = "led1";
+            gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+            linux,default-trigger = "heartbeat";
+            default-state = "off";
+        };
+    };
+};
+
+&am33xx_pinmux {
+    pinctrl-names = "default";
+
+    led_pins_default: led_pins_default {
+        pinctrl-single,pins = <
+            0x30 (PIN_OUTPUT_PULLDOWN | MUX_MODE7) /*gpmc_ad12.gpio1_12*/
+        >;
+    };
+};

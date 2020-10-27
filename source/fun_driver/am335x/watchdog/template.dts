@@ -1,0 +1,7 @@
+
+/{
+	watchdog {
+		compatible = "am335x_watchdog";
+		gpios = <&gpio3 12 0>;
+	};
+};

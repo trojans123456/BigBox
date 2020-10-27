@@ -1,0 +1,8 @@
+
+/{
+	
+	leds {
+		compatible = "am335x_leds";
+		gpios = <&gpio1 12 0>; 
+	};
+};
