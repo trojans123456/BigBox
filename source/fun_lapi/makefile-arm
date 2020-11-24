@@ -1,0 +1,123 @@
+#
+#  "$Id: Makefile 378 2015-02-14 09:01:34Z zhu_keyi $"
+#
+#  Copyright (c)2014-2015, Hangzhou Ihardy Technology CO.LTD.
+#  All Rights Reserved.
+#
+#	Description:	
+#	Revisions:		Year-Month-Day  SVN-Author  Modification
+#
+
+
+###################编译选项及编译器###################################
+CROSS = arm-linux-gnueabihf-
+
+CPP	= @echo " g++ $@"; $(CROSS)g++
+CC	= @echo " gcc $@"; $(CROSS)gcc
+LD	= @echo " ld  $@"; $(CROSS)ld
+AR  = @echo " ar  $@"; $(CROSS)ar
+RM	= @echo " RM	$@"; rm -rf
+STRIP	= @echo " strip  $@"; $(CROSS)strip
+
+###################项目路径和程序名称#################################
+CFLAGS += -Wall -O -Os
+CFLAGS += -D_REENTRANT
+
+LDFLAGS +=	-lpthread -static
+#LDFLAGS += "-Wl"
+
+AFLAGS += -r
+
+LIBDIR = ./lib/x86
+
+BINDIR = ./bin/x86
+
+OBJDIR=./obj/x86
+SRCDIR = source
+TESTDIR = demo
+
+###################include头文件路径##################################
+CFLAGS	+= -I ./include
+CFLAGS += -fpic
+LFLAGS += -shared
+
+###################lib库文件路径##################################
+LDFLAGS += -lpthread
+
+###################OBJ文件及路径############################################
+
+LIB_SRCS_C = 		\
+		source/task.c \
+		source/serial.c \
+		source/gpio.c \
+		source/spi.c \
+		source/i2c.c \
+		source/rtc.c \
+		source/wdt.c \
+		source/stringbuf.c \
+		source/event.c \
+		source/net.c \
+		source/ioengine.c \
+		source/tcpserver.c \
+		source/http.c \
+
+LIB_SRCS_CPP = 		\
+
+	 	 
+LIB_OBJS=$(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(LIB_SRCS_C))
+LIB_OBJS+=$(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(LIB_SRCS_CPP))
+
+TEST_SRCS = \
+		$(TESTDIR)/main.c
+		
+TEST_OBJS = $(patsubst $(TESTDIR)/%.cpp, $(OBJDIR)/%.o, $(TEST_SRCS))
+
+###################编译目标###########################################
+LIB_TARGET = $(LIBDIR)/liblapi.a
+LIB_TARGET_SO = $(LIBDIR)/liblapi.so
+
+TEST_TARGET = $(BINDIR)/liblapi_test
+
+#TARGET	= $(LIB_TARGET) $(TEST_TARGET)
+TARGET	= $(LIB_TARGET) $(LIB_TARGET_SO)  $(TEST_TARGET) 
+
+.PHONY: all clean rebuild
+
+all: $(TARGET)
+
+$(LIB_TARGET): $(LIB_OBJS)
+	$(RM) $@;
+	@[ ! -e $@ ] && mkdir -p $(dir $@) 
+	$(AR) $(AFLAGS) $@ $^
+
+
+$(LIB_TARGET_SO): $(LIB_OBJS)
+	$(RM) $@;
+	@[ ! -e $@ ] && mkdir -p $(dir $@)
+	echo $(LIB_OBJS)
+	$(CPP) $(LFLAGS) -o $@ $^ $(CFLAGS)
+	$(STRIP) $(LIB_TARGET_SO)
+
+$(TEST_TARGET):  $(EXTLIBS) $(TEST_OBJS) $(LIB_TARGET)
+	@$(RM) -fr $(dir $@)
+	@[ ! -e $@ ] && mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	
+
+$(OBJDIR)/%.o:$(SRCDIR)/%.c
+	@[ ! -e $@ ] && mkdir -p $(dir $@) 
+	$(CC) -c $(CFLAGS) $^ -o $@
+	
+$(OBJDIR)/%.o:$(SRCDIR)/%.cpp
+	@[ ! -e $@ ] && mkdir -p $(dir $@) 
+	$(CPP) -c $(CFLAGS) $^ -o $@
+
+$(OBJDIR)/%.o:$(TESTDIR)/%.cpp
+	@[ ! -e $@ ] && mkdir -p $(dir $@)
+	$(CPP) -c $(CFLAGS) $^ -o $@ $(LDFLAGS) $(LDFLAGS)
+	
+rebuild: clean all
+
+clean:
+	$(RM) $(TARGET) $(OBJDIR);
+
